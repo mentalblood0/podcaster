@@ -1,0 +1,84 @@
+import re
+import math
+import loguru
+import requests
+import pydantic
+
+from .Audio   import Audio
+from .Retrier import Retrier
+
+
+
+@pydantic.dataclasses.dataclass(frozen = True, kw_only = False)
+class Tag:
+
+	source : str
+
+	def __repr__(self):
+		return '#' + ''.join(
+			word.title()
+			for word in re.sub(
+				r'[^\w\s]',
+				'',
+				self.source
+			).split(' ')
+		)
+
+
+@pydantic.dataclasses.dataclass(frozen = True, kw_only = True)
+class Bot:
+
+	token : str
+	chat  : str
+
+	def tags(self, audio: Audio):
+
+		for t in (
+			'artist',
+			'album',
+			'title'
+		):
+			yield Tag(f'{audio.tags[t][0]}')
+
+		if (p := self.part(audio)) is not None:
+			yield Tag(f'part_{p}')
+
+	def part(self, audio: Audio):
+		if audio.part is None:
+			return None
+		else:
+			return f"{audio.part.current:{0}2}_{audio.part.total}"
+
+	def title(self, audio: Audio):
+
+		if (p := self.part(audio)) is None:
+			return f"{audio.tags['title'][0]}"
+		else:
+			return f"{audio.tags['title'][0]} - {p}"
+
+	def load(self, audio: Audio):
+
+		if audio.size >= 50 * 1000 * 1000:
+			for part in audio.splitted(math.ceil(audio.size / (50 * 1000 * 1000))):
+				self.load(part)
+		else:
+			while (
+				status_code := Retrier(
+					exceptions = {requests.exceptions.ConnectTimeout},
+					f          = lambda: requests.post(
+						f'https://api.telegram.org/bot{self.token}/sendAudio',
+						data  = {
+							'chat_id'   : self.chat,
+							'caption'   : '\n'.join(map(str, self.tags(audio))),
+							'title'     : self.title(audio),
+							'performer' : audio.tags['artist'],
+							'duration'  : audio.duration
+						},
+						files = {
+							'audio'     : audio.data,
+							'thumbnail' : audio.cover
+						}
+					).status_code
+				)()
+			) != 200:
+				loguru.logger.warning(f'{audio.tags["artist"][0]} - {audio.tags["title"][0]} {status_code}')
