@@ -25,10 +25,10 @@ class PartNumber:
 @pydantic.dataclasses.dataclass(frozen = True, kw_only = True, config = {'arbitrary_types_allowed': True})
 class Audio(Loggable):
 
-	data     : bytes             = dataclasses.field(repr = False)
-	playlist : pytube.Playlist   = dataclasses.field(repr = False)
+	data     : bytes
+	playlist : pytube.Playlist
 	video    : pytube.YouTube
-	avatar   : Avatar            = dataclasses.field(repr = False)
+	avatar   : Avatar
 	part     : PartNumber | None = None
 
 	def __repr__(self):
@@ -89,7 +89,7 @@ class Audio(Loggable):
 	def duration(self):
 		return mutagen.mp3.MP3(self.io).info.length
 
-	@property
+	@functools.cached_property
 	def cover(self) -> bytes:
 		return mutagen.id3.ID3(self.io).getall('APIC')[0].data
 
