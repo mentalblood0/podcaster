@@ -12,7 +12,7 @@ def cli():
 	pass
 
 
-def _upload(youtube: Channel, token: str, telegram: str, cache: Cache):
+def _upload(youtube: Channel, bot: Bot, cache: Cache):
 
 	cache.load()
 	if youtube.downloaded(cache):
@@ -21,10 +21,7 @@ def _upload(youtube: Channel, token: str, telegram: str, cache: Cache):
 	for p in youtube.playlists:
 
 		for a in p.audio(youtube.avatar, cache):
-			Bot(
-				token = token,
-				chat  = telegram
-			).load(a)
+			bot.load(a)
 			cache.add(a.id)
 
 @cli.command(name = 'upload')
@@ -33,7 +30,14 @@ def _upload(youtube: Channel, token: str, telegram: str, cache: Cache):
 @click.option('--telegram', required = True,  type = str,     help = 'Telegram chat id')
 @click.option('--cache',    required = True,  type = Cache,   help = 'Path to cache file to not repeat uploads')
 def upload(youtube: Channel, token: str, telegram: str, cache: Cache):
-	return _upload(youtube, token, telegram, cache)
+	return _upload(
+		youtube = youtube,
+		cache   = cache,
+		bot     = Bot(
+			token = token,
+			chat  = telegram
+		)
+	)
 
 
 @cli.command(name = 'tasks')
@@ -44,10 +48,12 @@ def tasks(token: str, files: tuple[Tasks, ...]):
 	for tasks in files:
 		for t in tasks.load():
 			_upload(
-				token    = token,
-				youtube  = t.youtube,
-				telegram = t.telegram,
-				cache    = t.cache
+				youtube = t.youtube,
+				cache   = t.cache,
+				bot     = Bot(
+					token = token,
+					chat  = t.telegram
+				)
 			)
 
 cli()
