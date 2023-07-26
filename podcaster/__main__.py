@@ -15,6 +15,8 @@ def cli():
 def _upload(youtube: Channel, token: str, telegram: str, cache: Cache):
 
 	cache.load()
+	if youtube.downloaded(cache):
+		return
 
 	for p in youtube.playlists:
 
