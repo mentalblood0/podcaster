@@ -29,10 +29,19 @@ class Channel(Loggable):
 
 	@functools.cached_property
 	def avatar(self):
-		return Avatar(f'https://www.youtube.com/@{self.name}')
+		return Avatar(self.address)
+
+	@property
+	def last(self):
+		return next(
+			re.finditer(
+				r'\/watch\?v=([^"]+)',
+				requests.get(f'{self.address}/videos').text
+			)
+		).groups()[0]
 
 	def downloaded(self, cache: Cache):
-		return next(iter(pytube.Channel(self.address).videos)).video_id in cache
+		return self.last in cache
 
 	@property
 	def playlists(self):
