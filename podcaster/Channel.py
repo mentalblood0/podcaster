@@ -20,7 +20,7 @@ class Channel(Loggable):
 	def id(self):
 		return re.findall(
 			r'/channel/([^\"]+)',
-			requests.get(f'https://www.youtube.com/@{self.name}/featured').content.decode()
+			requests.get(f'{self.address}/featured').content.decode()
 		)[0]
 
 	@property
@@ -47,10 +47,8 @@ class Channel(Loggable):
 	def playlists(self):
 		return (
 			Playlist(pytube.Playlist(f'https://www.youtube.com/playlist?list={id}'))
-			for id in reversed(
-				re.findall(
-					r'/playlist\?list=([^"]+)',
-					requests.get(f'{self.address}/playlists').content.decode()
-				)
+			for id in re.findall(
+				r'/playlist\?list=([^"]+)',
+				requests.get(f'{self.address}/playlists?sort=lad').text
 			)
 		)
