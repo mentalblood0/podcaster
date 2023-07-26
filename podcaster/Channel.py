@@ -46,7 +46,7 @@ class Channel(Loggable):
 	@property
 	def playlists(self):
 		return (
-			Playlist(pytube.Playlist(f'https://www.youtube.com/playlist?list={id}'))
+			Playlist(pytube.Playlist(f'https://www.youtube.com/playlists?list={id}'))
 			for id in re.findall(
 				r'/playlist\?list=([^"]+)',
 				requests.get(f'{self.address}/playlists?sort=lad').text
