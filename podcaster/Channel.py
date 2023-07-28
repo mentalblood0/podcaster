@@ -4,7 +4,6 @@ import requests
 import pydantic
 import functools
 
-from .Cache    import Cache
 from .Avatar   import Avatar
 from .Video    import Video
 from .Playlist import Playlist
@@ -45,9 +44,6 @@ class Channel(Loggable):
 			),
 			playlist = None
 		)
-
-	def downloaded(self, cache: Cache):
-		return self.last in cache
 
 	@property
 	def playlists(self):

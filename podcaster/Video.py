@@ -8,24 +8,30 @@ import urllib.error
 import pytube.exceptions
 
 from .Audio    import Audio
+from .Avatar   import Avatar
 from .Retrier  import Retrier
-from .Channel  import Channel
 from .Repeater import Repeater
+from .Loggable import Loggable
 
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = True)
-class Video:
+@pydantic.dataclasses.dataclass(frozen = True, kw_only = True, config = {'arbitrary_types_allowed': True})
+class Video(Loggable):
 
 	source   : pytube.YouTube
 	playlist : pytube.Playlist | None
 
+	def __repr__(self):
+		return f'Video(author=\'{self.source.author}\', title=\'{self.source.title}\')'
+
 	@functools.cached_property
 	def id(self):
-		return self.source.video_id
+		return f'{self.source.author} - {self.source.title}'
 
-	@property
-	def audio(self):
+	def __hash__(self):
+		return hash(self.id)
+
+	def audio(self, avatar: Avatar):
 
 		try:
 			audio = Retrier(
@@ -69,5 +75,5 @@ class Video:
 			data     = raw.getvalue(),
 			playlist = self.playlist,
 			video    = self.source,
-			avatar   = Channel(self.source.channel_url).avatar
+			avatar   = avatar
 		).converted.tagged

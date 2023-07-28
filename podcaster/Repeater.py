@@ -25,12 +25,16 @@ class Repeater(typing.Generic[T]):
 				return result
 
 			time.sleep(
-				(
-					self.interval -
-					(
-						(datetime.datetime.now() - start) -
-						self.interval * n
-					)
-				).total_seconds()
+				t
+				if (
+					t := (
+						self.interval -
+						(
+							(datetime.datetime.now() - start) -
+							self.interval * n
+						)
+					).total_seconds()
+				) > 0
+				else 0
 			)
 			n += 1

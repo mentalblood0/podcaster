@@ -32,7 +32,7 @@ class Audio(Loggable):
 	part     : PartNumber      | None = None
 
 	def __repr__(self):
-		return f'{self.__class__.__name__}(playlist=\'{self.playlist.title if self.playlist else ''}\', title=\'{self.video.title}\', part={self.part}, size={self.size})'
+		return f'{self.__class__.__name__}(playlist=\'{self.playlist.title if self.playlist else ""}\', title=\'{self.video.title}\', part={self.part}, size={self.size})'
 
 	@functools.cached_property
 	def id(self):

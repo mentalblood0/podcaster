@@ -1,11 +1,13 @@
 import re
 import math
 import loguru
+import datetime
 import requests
 import pydantic
 
-from .Audio   import Audio
-from .Retrier import Retrier
+from .Audio    import Audio
+from .Retrier  import Retrier
+from .Repeater import Repeater
 
 
 
@@ -65,20 +67,23 @@ class Bot:
 			while (
 				status_code := Retrier(
 					exceptions = {requests.exceptions.ConnectTimeout},
-					f          = lambda: requests.post(
-						f'https://api.telegram.org/bot{self.token}/sendAudio',
-						data  = {
-							'chat_id'   : self.chat,
-							'caption'   : '\n'.join(map(str, self.tags(audio))),
-							'title'     : self.title(audio),
-							'performer' : audio.tags['artist'],
-							'duration'  : audio.duration
-						},
-						files = {
-							'audio'     : audio.data,
-							'thumbnail' : audio.cover
-						}
-					).status_code
+					repeater   = Repeater(
+						f = lambda: requests.post(
+							f'https://api.telegram.org/bot{self.token}/sendAudio',
+							data  = {
+								'chat_id'   : self.chat,
+								'caption'   : '\n'.join(map(str, self.tags(audio))),
+								'title'     : self.title(audio),
+								'performer' : audio.tags['artist'],
+								'duration'  : audio.duration
+							},
+							files = {
+								'audio'     : audio.data,
+								'thumbnail' : audio.cover
+							}
+						).status_code,
+						interval = datetime.timedelta(seconds = 3)
+					)
 				)()
 			) != 200:
 				loguru.logger.warning(f'{audio.tags["artist"][0]} - {audio.tags["title"][0]} {status_code}')

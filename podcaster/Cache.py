@@ -1,6 +1,5 @@
 import io
 import csv
-import pytube
 import typing
 import pathlib
 import pydantic
@@ -14,51 +13,45 @@ from .Video import Video
 class Cache:
 
 	source    : typing.Final[pathlib.Path]
-	hot       : set[Video]                 = dataclasses.field(default_factory = set)
-	delimiter : typing.Final[str]          = ' '
-	quotechar : typing.Final[str]          = '|'
+	hot       : set[str]                   = dataclasses.field(default_factory = set)
+	delimiter : typing.Final[str]          = ','
+	quote     : typing.Final[str]          = '"'
+	escape    : typing.Final[str]          = '\\'
 
 	def reader(self, file: io.TextIOWrapper):
 		return csv.reader(
 			file,
-			delimiter = self.delimiter,
-			quotechar = self.quotechar
+			delimiter  = self.delimiter,
+			quotechar  = self.quote,
+			escapechar = self.escape
 		)
 
 	def writer(self, file: io.TextIOWrapper):
 		return csv.writer(
 			file,
-			delimiter = self.delimiter,
-			quotechar = self.quotechar,
-			quoting   = csv.QUOTE_MINIMAL
-		)
-
-	@classmethod
-	def video(cls, id: str):
-		return Video(
-			source   = pytube.YouTube.from_id(id),
-			playlist = None
+			delimiter  = self.delimiter,
+			quotechar  = self.quote,
+			escapechar = self.escape,
+			quoting    = csv.QUOTE_MINIMAL
 		)
 
 	def load(self):
-		if not self.source.exists():
-			self.hot.clear()
-		else:
-			with self.source.open(newline = '') as f:
+		if self.source.exists():
+			with self.source.open(newline = '', encoding = 'utf8') as f:
 				self.hot = {
-					self.video(row[0])
+					row[0]
 					for row in self.reader(f)
 				}
 
-	def add(self, value: str):
+	def add(self, video: Video):
 
-		with self.source.open(mode = 'a', newline = '') as f:
-			self.writer(f).writerow((value,))
+		with self.source.open(mode = 'a', newline = '', encoding = 'utf8') as f:
+			self.writer(f).writerow((video.id,))
 
-		self.hot.add(self.video(value))
+		self.hot.add(video.id)
 
-	def __contains__(self, value: Video):
-		return value in self.hot
+	def __contains__(self, video: Video):
+		return video.id in self.hot
 
 	def filter(self, stream: typing.Iterable[Video]):
 		return (

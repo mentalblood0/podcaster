@@ -17,14 +17,15 @@ def cli():
 def _upload(youtube: Channel, bot: Bot, cache: Cache):
 
 	cache.load()
-	if youtube.downloaded(cache):
+	if youtube.last in cache:
 		return
 
 	for p in youtube.playlists:
 
 		for v in cache.filter(p.video):
-			if (audio := v.audio) is not None:
+			if (audio := v.audio(youtube.avatar)) is not None:
 				bot.load(audio)
+				cache.add(v)
 
 
 @cli.command(name = 'upload')
@@ -70,7 +71,7 @@ def poll(token: str, interval: int, files: tuple[Tasks, ...]):
 	Repeater(
 		f        = lambda: _tasks(token, files),
 		interval = datetime.timedelta(minutes = interval)
-	)
+	)()
 
 
 cli()
