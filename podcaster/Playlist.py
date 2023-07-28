@@ -1,15 +1,17 @@
 import io
 import pytube
 import pydantic
+import datetime
 import http.client
 import urllib.error
 import pytube.exceptions
 
-from .Cache    import Cache
-from .Audio    import Audio
-from .Avatar   import Avatar
-from .Retrier  import Retrier
-from .Loggable import Loggable
+from .Cache     import Cache
+from .Audio     import Audio
+from .Avatar    import Avatar
+from .Retrier   import Retrier
+from .Loggable  import Loggable
+from .Repeater  import Repeater
 
 
 
@@ -29,20 +31,23 @@ class Playlist(Loggable):
 				continue
 
 			try:
-				if not (
-					audio := Retrier(
-						f          = lambda: v.streams.get_audio_only(),
-						exceptions = {
-							urllib.error.URLError
-						}
-					)()
-				):
-					continue
+				audio = Retrier(
+					repeater   = Repeater(
+						f        = lambda: v.streams.get_audio_only(),
+						interval = datetime.timedelta(seconds = 3)
+					),
+					exceptions = {
+						urllib.error.URLError
+					}
+				)()
 			except (
 				pytube.exceptions.AgeRestrictedError,
 				pytube.exceptions.RegexMatchError,
 				pytube.exceptions.LiveStreamError
 			):
+				continue
+
+			if audio is None:
 				continue
 
 			raw = io.BytesIO()
@@ -51,7 +56,10 @@ class Playlist(Loggable):
 				audio.stream_to_buffer(raw)
 
 			Retrier(
-				f          = download,
+				repeater = Repeater(
+					f        = download,
+					interval = datetime.timedelta(seconds = 3)
+				),
 				exceptions = {
 					http.client.IncompleteRead,
 					http.client.RemoteDisconnected,
