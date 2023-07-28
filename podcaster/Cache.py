@@ -1,9 +1,12 @@
 import io
 import csv
+import pytube
 import typing
 import pathlib
 import pydantic
 import dataclasses
+
+from .Video import Video
 
 
 
@@ -11,7 +14,7 @@ import dataclasses
 class Cache:
 
 	source    : typing.Final[pathlib.Path]
-	hot       : set[str]                   = dataclasses.field(default_factory = set)
+	hot       : set[Video]                 = dataclasses.field(default_factory = set)
 	delimiter : typing.Final[str]          = ' '
 	quotechar : typing.Final[str]          = '|'
 
@@ -30,13 +33,20 @@ class Cache:
 			quoting   = csv.QUOTE_MINIMAL
 		)
 
+	@classmethod
+	def video(cls, id: str):
+		return Video(
+			source   = pytube.YouTube.from_id(id),
+			playlist = None
+		)
+
 	def load(self):
 		if not self.source.exists():
 			self.hot.clear()
 		else:
 			with self.source.open(newline = '') as f:
 				self.hot = {
-					row[0]
+					self.video(row[0])
 					for row in self.reader(f)
 				}
 
@@ -45,7 +55,14 @@ class Cache:
 		with self.source.open(mode = 'a', newline = '') as f:
 			self.writer(f).writerow((value,))
 
-		self.hot.add(value)
+		self.hot.add(self.video(value))
 
-	def __contains__(self, value: str):
+	def __contains__(self, value: Video):
 		return value in self.hot
+
+	def filter(self, stream: typing.Iterable[Video]):
+		return (
+			e
+			for e in stream
+			if e not in self
+		)

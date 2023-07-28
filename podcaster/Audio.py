@@ -26,13 +26,13 @@ class PartNumber:
 class Audio(Loggable):
 
 	data     : bytes
-	playlist : pytube.Playlist
+	playlist : pytube.Playlist | None
 	video    : pytube.YouTube
 	avatar   : Avatar
-	part     : PartNumber | None = None
+	part     : PartNumber      | None = None
 
 	def __repr__(self):
-		return f'{self.__class__.__name__}(playlist=\'{self.playlist.title}\', title=\'{self.video.title}\', part={self.part}, size={self.size})'
+		return f'{self.__class__.__name__}(playlist=\'{self.playlist.title if self.playlist else ''}\', title=\'{self.video.title}\', part={self.part}, size={self.size})'
 
 	@functools.cached_property
 	def id(self):
@@ -111,7 +111,7 @@ class Audio(Loggable):
 			'title'    : self.video.title,
 			'artist'   : self.video.author,
 			'composer' : self.video.author,
-			'album'    : self.playlist.title
+			'album'    : self.playlist.title if self.playlist else 'Unknown Album'
 		})
 		tags.save(data_io)
 

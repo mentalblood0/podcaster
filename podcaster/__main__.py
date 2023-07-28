@@ -22,9 +22,10 @@ def _upload(youtube: Channel, bot: Bot, cache: Cache):
 
 	for p in youtube.playlists:
 
-		for a in p.audio(youtube.avatar, cache):
-			bot.load(a)
-			cache.add(a.id)
+		for v in cache.filter(p.video):
+			if (audio := v.audio) is not None:
+				bot.load(audio)
+
 
 @cli.command(name = 'upload')
 @click.option('--youtube',  required = True,  type = Channel, help = 'Youtube channel name as it is in browser address line')

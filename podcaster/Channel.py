@@ -6,6 +6,7 @@ import functools
 
 from .Cache    import Cache
 from .Avatar   import Avatar
+from .Video    import Video
 from .Playlist import Playlist
 from .Loggable import Loggable
 
@@ -33,12 +34,17 @@ class Channel(Loggable):
 
 	@property
 	def last(self):
-		return next(
-			re.finditer(
-				r'\/watch\?v=([^"]+)',
-				requests.get(f'{self.address}/videos').text
-			)
-		).groups()[0]
+		return Video(
+			source   = pytube.YouTube.from_id(
+				next(
+					re.finditer(
+						r'\/watch\?v=([^"]+)',
+						requests.get(f'{self.address}/videos').text
+					)
+				).groups()[0]
+			),
+			playlist = None
+		)
 
 	def downloaded(self, cache: Cache):
 		return self.last in cache
