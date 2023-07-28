@@ -1,9 +1,11 @@
 import click
+import datetime
 
-from .Bot     import Bot
-from .Tasks   import Tasks
-from .Cache   import Cache
-from .Channel import Channel
+from .Bot      import Bot
+from .Tasks    import Tasks
+from .Cache    import Cache
+from .Channel  import Channel
+from .Repeater import Repeater
 
 
 
@@ -30,7 +32,7 @@ def _upload(youtube: Channel, bot: Bot, cache: Cache):
 @click.option('--telegram', required = True,  type = str,     help = 'Telegram chat id')
 @click.option('--cache',    required = True,  type = Cache,   help = 'Path to cache file to not repeat uploads')
 def upload(youtube: Channel, token: str, telegram: str, cache: Cache):
-	return _upload(
+	_upload(
 		youtube = youtube,
 		cache   = cache,
 		bot     = Bot(
@@ -40,11 +42,7 @@ def upload(youtube: Channel, token: str, telegram: str, cache: Cache):
 	)
 
 
-@cli.command(name = 'tasks')
-@click.option('--token', required = True, type = str,               help = 'Telegram bot token')
-@click.argument('files', required = True, type = Tasks, nargs = -1)
-def tasks(token: str, files: tuple[Tasks, ...]):
-
+def _tasks(token: str, files: tuple[Tasks, ...]):
 	for tasks in files:
 		for t in tasks.load():
 			_upload(
@@ -55,5 +53,23 @@ def tasks(token: str, files: tuple[Tasks, ...]):
 					chat  = t.telegram
 				)
 			)
+
+@cli.command(name = 'tasks')
+@click.option('--token', required = True, type = str,   help = 'Telegram bot token')
+@click.argument('files', required = True, type = Tasks, nargs = -1)
+def tasks(token: str, files: tuple[Tasks, ...]):
+	_tasks(token, files)
+
+
+@cli.command(name = 'poll')
+@click.option('--token',    required = True, type = str,                     help = 'Telegram bot token')
+@click.option('--interval', required = True, type = click.IntRange(min = 0), help = 'Interval in minutes')
+@click.argument('files',    required = True, type = Tasks, nargs = -1)
+def poll(token: str, interval: int, files: tuple[Tasks, ...]):
+	Repeater(
+		f        = lambda: _tasks(token, files),
+		interval = datetime.timedelta(minutes = interval)
+	)
+
 
 cli()
