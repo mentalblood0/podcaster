@@ -1,11 +1,10 @@
 import io
 import csv
+import yoop
 import typing
 import pathlib
 import pydantic
 import dataclasses
-
-from .Video import Video
 
 
 

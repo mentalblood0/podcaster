@@ -1,11 +1,11 @@
 import re
+import yoop
 import math
 import loguru
 import datetime
 import requests
 import pydantic
 
-from .Audio    import Audio
 from .Retrier  import Retrier
 from .Repeater import Repeater
 
@@ -33,7 +33,7 @@ class Bot:
 	token : str
 	chat  : str
 
-	def tags(self, audio: Audio):
+	def tags(self, audio: yoop.Audio):
 
 		for t in (
 			'artist',
@@ -45,23 +45,23 @@ class Bot:
 		if (p := self.part(audio)) is not None:
 			yield Tag(f'part_{p}')
 
-	def part(self, audio: Audio):
+	def part(self, audio: yoop.Audio):
 		if audio.part is None:
 			return None
 		else:
 			return f"{audio.part.current:{0}2}_{audio.part.total}"
 
-	def title(self, audio: Audio):
+	def title(self, audio: yoop.Audio):
 
 		if (p := self.part(audio)) is None:
 			return f"{audio.tags['title'][0]}"
 		else:
 			return f"{audio.tags['title'][0]} - {p}"
 
-	def load(self, audio: Audio):
+	def load(self, audio: yoop.Audio):
 
-		if audio.size >= 50 * 1000 * 1000:
-			for part in audio.splitted(math.ceil(audio.size / (50 * 1000 * 1000))):
+		if len(audio) >= 50 * 1000 * 1000:
+			for part in audio.splitted(math.ceil(len(audio) / (50 * 1000 * 1000))):
 				self.load(part)
 		else:
 			while (
@@ -79,7 +79,7 @@ class Bot:
 							},
 							files = {
 								'audio'     : audio.data,
-								'thumbnail' : audio.cover
+								# 'thumbnail' : audio.cover
 							}
 						).status_code,
 						interval = datetime.timedelta(seconds = 3)
