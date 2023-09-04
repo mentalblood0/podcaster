@@ -1,6 +1,6 @@
 import loguru
 import typing
-import pydantic
+import dataclasses
 
 from .Repeater import Repeater
 
@@ -9,7 +9,7 @@ from .Repeater import Repeater
 T = typing.TypeVar('T')
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = True)
+@dataclasses.dataclass(frozen = True, kw_only = True)
 class Retrier(typing.Generic[T]):
 
 	repeater   : Repeater[T]

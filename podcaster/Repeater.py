@@ -1,14 +1,14 @@
 import time
 import typing
-import pydantic
 import datetime
+import dataclasses
 
 
 
 T = typing.TypeVar('T')
 
 
-@pydantic.dataclasses.dataclass(frozen = True, kw_only = True)
+@dataclasses.dataclass(frozen = True, kw_only = True)
 class Repeater(typing.Generic[T]):
 
 	f        : typing.Callable[[], T]
