@@ -1,7 +1,6 @@
 import yoop
 import click
 import pathlib
-import logging
 
 from .Bot   import Bot
 from .Cache import Cache
@@ -25,7 +24,7 @@ def _upload(
 	if playlist in cache:
 		return
 
-	logging.log(logging.INFO, f'playlist {playlist.title}')
+	print(f'playlist {playlist.title}')
 
 	for e in playlist[::-1]:
 
@@ -38,7 +37,7 @@ def _upload(
 
 				if e.available and e not in cache:
 
-					logging.log(logging.INFO, f'video {e.title.simple}')
+					print(f'video {e.title.simple}')
 
 					bot.load(
 						e.audio(
@@ -63,13 +62,13 @@ def _upload(
 				cache.add(e)
 
 @cli.command(name = 'upload')
-@click.option('--url',        required = True,  type = yoop.Url,                                                                                    help = 'Youtube channel or playlist URL')
-@click.option('--token',      required = True,  type = str,                                                                                         help = 'Telegram bot token')
-@click.option('--telegram',   required = True,  type = str,                                                                                         help = 'Telegram chat id')
-@click.option('--cache',      required = True,  type = pathlib.Path,                                                                                help = 'Path to cache file')
-@click.option('--bitrate',    required = False, type = yoop.Audio.Bitrate,                                  default = yoop.Audio.Bitrate(80),       help = 'Resulting audio bitrate')
-@click.option('--samplerate', required = False, type = yoop.Audio.Samplerate,                               default = yoop.Audio.Samplerate(32000), help = 'Resulting audio samplerate')
-@click.option('--channels',   required = False, type = click.Choice([c.name for c in yoop.Audio.Channels]), default = yoop.Audio.Channels.mono,     help = 'Resulting audio channels')
+@click.option('--url',        required = True,  type = yoop.Url,                                                                                     help = 'Youtube channel or playlist URL')
+@click.option('--token',      required = True,  type = str,                                                                                          help = 'Telegram bot token')
+@click.option('--telegram',   required = True,  type = str,                                                                                          help = 'Telegram chat id')
+@click.option('--cache',      required = True,  type = pathlib.Path,                                                                                 help = 'Path to cache file')
+@click.option('--bitrate',    required = False, type = yoop.Audio.Bitrate,                                  default = 80,                            help = 'Resulting audio bitrate')
+@click.option('--samplerate', required = False, type = yoop.Audio.Samplerate,                               default = 32000,                         help = 'Resulting audio samplerate')
+@click.option('--channels',   required = False, type = click.Choice([c.name for c in yoop.Audio.Channels]), default = yoop.Audio.Channels.mono.name, help = 'Resulting audio channels')
 def upload(
 	url           : yoop.Url,
 	token         : str,
@@ -77,7 +76,7 @@ def upload(
 	cache         : pathlib.Path,
 	bitrate       : yoop.Audio.Bitrate,
 	samplerate    : yoop.Audio.Samplerate,
-	channels_name : str
+	channels      : str
 ):
 	for p in (
 		yoop.Playlist(url / 'playlists'),
@@ -88,7 +87,7 @@ def upload(
 			cache      = Cache(cache),
 			bitrate    = bitrate,
 			samplerate = samplerate,
-			channels   = yoop.Audio.Channels(channels_name),
+			channels   = yoop.Audio.Channels(channels),
 			bot        = Bot(
 				token = token,
 				chat  = telegram

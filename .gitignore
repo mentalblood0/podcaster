@@ -5,4 +5,4 @@ trash
 dist
 __pycache__
 build
-cache.csv
+cache*.csv
