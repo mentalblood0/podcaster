@@ -51,7 +51,7 @@ class Bot:
 		if audio.part is None:
 			return audio.tags['title'][0]
 		else:
-			return f'{dataclasses.replace(self, part = None).title} - {audio.part}'
+			return f'{self.title(dataclasses.replace(audio, part = None))} - {audio.part}'
 
 	def load(self, audio: yoop.Audio):
 		if len(audio) >= 50 * 1000 * 1000:
@@ -73,7 +73,9 @@ class Bot:
 								'caption'              : '\n'.join(map(str, self.tags(audio))),
 								'title'                : self.title(audio),
 								'performer'            : audio.tags['artist'][0],
-								'duration'             : audio.duration
+								'duration'             : audio.duration,
+								'disable_notification' : True,
+								'protect_content'      : False
 							},
 							files = {
 								'audio'     : audio.data,
