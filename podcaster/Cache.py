@@ -62,7 +62,7 @@ class Cache:
 			case yoop.Video():
 				return (not o.available) or (self.id(o) in self.hot)
 			case yoop.Playlist():
-				return o[-1] in self and o[0] in self
+				return all(v in self for v in o)
 
 	def filter(self, stream: typing.Iterable[yoop.Video | yoop.Playlist]):
 		return (
