@@ -25,7 +25,7 @@ def _upload(playlist: yoop.Playlist, bot: Bot, cache: Cache = Cache(pathlib.Path
 				_upload(e, bot, cache)
 			case yoop.Video():
 				if e.available and e not in cache:
-					print('video', e.title)
+					print('video', e.title.simple)
 					bot.load(
 						e.audio(
 							yoop.Audio.Bitrate(90)
