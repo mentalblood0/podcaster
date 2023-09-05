@@ -55,7 +55,7 @@ def _upload(
 							title  = e.title.simple,
 							album  = playlist.title,
 							artist = e.uploader
-						).covered(>
+						).covered(
 							playlist.uploader.avatar.resized(150)
 						)
 					)
