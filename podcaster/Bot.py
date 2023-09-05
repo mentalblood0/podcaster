@@ -47,6 +47,12 @@ class Bot:
 			)
 		)
 
+	def title(self, audio: yoop.Audio):
+		if audio.part is None:
+			return audio.tags['title'][0]
+		else:
+			return f'{dataclasses.replace(self, part = None).title} - {audio.part}'
+
 	def load(self, audio: yoop.Audio):
 		if len(audio) >= 50 * 1000 * 1000:
 			for a in audio.splitted(
@@ -63,11 +69,11 @@ class Bot:
 						f = lambda: requests.post(
 							f'https://api.telegram.org/bot{self.token}/sendAudio',
 							data  = {
-								'chat_id'   : self.chat,
-								'caption'   : '\n'.join(map(str, self.tags(audio))),
-								'title'     : audio.title,
-								'performer' : audio.tags['artist'],
-								'duration'  : audio.duration
+								'chat_id'              : self.chat,
+								'caption'              : '\n'.join(map(str, self.tags(audio))),
+								'title'                : self.title(audio),
+								'performer'            : audio.tags['artist'][0],
+								'duration'             : audio.duration
 							},
 							files = {
 								'audio'     : audio.data,
