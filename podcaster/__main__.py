@@ -21,12 +21,15 @@ def _upload(
 	channels   : yoop.Audio.Channels
 ):
 
+	if not playlist.available:
+		return
+
 	if playlist in cache:
 		return
 
 	print(f'playlist {playlist.title}')
 
-	for e in playlist[::-1]:
+	for e in playlist[::-1]>:
 
 		match e:
 
