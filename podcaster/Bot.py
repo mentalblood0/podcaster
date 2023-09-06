@@ -74,7 +74,6 @@ class Bot:
 								'title'                : self.title(audio),
 								'performer'            : audio.tags['artist'][0],
 								'duration'             : audio.duration,
-								'disable_notification' : True,
 								'protect_content'      : False
 							},
 							files = {
