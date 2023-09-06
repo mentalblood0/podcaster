@@ -82,15 +82,13 @@ class Cache:
 		if not self.source.exists():
 			return
 
+		self.entries.clear()
+		self.urls.clear()
 		with self.source.open(newline = '', encoding = 'utf8') as f:
-			self.entries = {
-				Cache.Entry.from_row(row)
-				for row in self.reader(f)
-			}
-		self.urls = {
-			e.url
-			for e in self.entries
-		}
+			for row in self.reader(f):
+				entry = Cache.Entry.from_row(row)
+				self.entries.add(entry)
+				self.urls.add(entry.url)
 
 	def add(self, video: yoop.Video):
 
