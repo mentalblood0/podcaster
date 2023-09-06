@@ -29,7 +29,7 @@ def _upload(
 
 	print(f'playlist {playlist.title}')
 
-	for e in playlist[::-1]>:
+	for e in playlist[::-1]:
 
 		match e:
 
