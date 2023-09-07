@@ -38,7 +38,7 @@ def _upload(
 
 			case yoop.Video():
 
-				if e.available and e not in cache:
+				if e not in cache and e.available:
 
 					print(f'video {e.title.simple}')
 
