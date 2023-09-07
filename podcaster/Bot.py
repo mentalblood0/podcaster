@@ -41,6 +41,7 @@ class Bot:
 					audio.tags['artist'][0],
 					audio.tags['album'][0],
 					audio.tags['title'][0],
+					f"Released_{audio.tags['date'][0].replace('.', '_').replace('-', '_').replace(':', '_').replace(' ', '_')}",
 					f'part {audio.part}' if audio.part else ''
 				)
 			)
@@ -54,11 +55,13 @@ class Bot:
 
 	def load(self, audio: yoop.Audio):
 		if len(audio) >= 50 * 1000 * 1000:
-			for a in audio.splitted(
-				math.ceil(
-					len(audio) / (50 * 1000 * 1000)
+			for a in [
+				*audio.splitted(
+					math.ceil(
+						len(audio) / (50 * 1000 * 1000)
+					)
 				)
-			):
+			]:
 				self.load(a)
 		else:
 			while (
@@ -73,6 +76,7 @@ class Bot:
 								'title'                : self.title(audio),
 								'performer'            : audio.tags['artist'][0],
 								'duration'             : audio.duration,
+								'disable_notification' : True,
 								'protect_content'      : False
 							},
 							files = {

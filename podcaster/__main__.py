@@ -55,9 +55,10 @@ def _upload(
 								format     = yoop.Audio.Format.MP3,
 								channels   = channels
 							).tagged(
-								title  = e.title.simple,
-								album  = playlist.title,
-								artist = e.uploader
+								title    = e.title.simple,
+								album    = playlist.title,
+								artist   = e.uploader,
+								date = str(e.uploaded)
 							).covered(
 								playlist.uploader.avatar.resized(150)
 							)
