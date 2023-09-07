@@ -38,10 +38,10 @@ class Bot:
 			map(
 				Tag,
 				(
-					audio.tags['artist'][0],
-					audio.tags['album'][0],
-					audio.tags['title'][0],
-					f"Released_{audio.tags['date'][0].replace('.', '_').replace('-', '_').replace(':', '_').replace(' ', '_')}",
+					audio.tags.artist,
+					audio.tags.album,
+					audio.tags.title,
+					f"Released_{audio.tags.date.year}_{audio.tags.date.month}_{audio.tags.date.day}",
 					f'part {audio.part}' if audio.part else ''
 				)
 			)
@@ -49,7 +49,7 @@ class Bot:
 
 	def title(self, audio: yoop.Audio):
 		if audio.part is None:
-			return audio.tags['title'][0]
+			return audio.tags.title
 		else:
 			return f'{self.title(dataclasses.replace(audio, part = None))} - {audio.part}'
 
@@ -74,14 +74,14 @@ class Bot:
 								'chat_id'              : self.chat,
 								'caption'              : '\n'.join(map(str, self.tags(audio))),
 								'title'                : self.title(audio),
-								'performer'            : audio.tags['artist'][0],
+								'performer'            : audio.tags.artist,
 								'duration'             : audio.duration,
 								'disable_notification' : True,
 								'protect_content'      : False
 							},
 							files = {
 								'audio'     : audio.data,
-								'thumbnail' : audio.cover
+								'thumbnail' : audio.tags.cover or b''
 							}
 						).status_code,
 						interval = datetime.timedelta(seconds = 3)

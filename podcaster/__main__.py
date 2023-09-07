@@ -1,7 +1,6 @@
 import yoop
 import click
 import pathlib
-import traceback
 
 from .Bot   import Bot
 from .Cache import Cache
@@ -71,7 +70,7 @@ def _upload(
 @click.option('--cache',      required = True,  type = pathlib.Path,                                                                                 help = 'Path to cache file')
 @click.option('--bitrate',    required = False, type = yoop.Audio.Bitrate,                                  default = 80,                            help = 'Resulting audio bitrate')
 @click.option('--samplerate', required = False, type = yoop.Audio.Samplerate,                               default = 32000,                         help = 'Resulting audio samplerate')
-@click.option('--channels',   required = False, type = click.Choice([c.name for c in yoop.Audio.Channels]), default = yoop.Audio.Channels.mono.name, help = 'Resulting audio channels')
+@click.option('--channels',   required = False, type = click.Choice([c.value for c in yoop.Audio.Channels]), default = yoop.Audio.Channels.mono.value, help = 'Resulting audio channels')
 def upload(
 	url           : yoop.Url,
 	token         : str,

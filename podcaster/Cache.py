@@ -60,7 +60,7 @@ class Cache:
 				case list():
 					if len(r) != 5:
 						raise ValueError
-					return Cache.Entry.from_row(tuple(r))
+					return Cache.Entry.from_row(tuple[str, str, str, str, str](r))
 
 	def __post_init__(self):
 		self.load()
