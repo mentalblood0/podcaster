@@ -1,7 +1,6 @@
 import re
 import yoop
 import math
-import loguru
 import datetime
 import requests
 import dataclasses
@@ -85,4 +84,4 @@ class Bot:
 					)
 				)()
 			) != 200:
-				loguru.logger.warning(f'{audio.tags["artist"][0]} - {audio.tags["title"][0]} {status_code}')
+				print(f'{audio.tags["artist"][0]} - {audio.tags["title"][0]} {status_code}')

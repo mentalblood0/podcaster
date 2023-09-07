@@ -42,25 +42,28 @@ def _upload(
 
 					print(f'video {e.title.simple}')
 
-					bot.load(
-						e.audio(
-							max(
-								yoop.Audio.Bitrate(90),
-								bitrate
+					try:
+						bot.load(
+							e.audio(
+								max(
+									yoop.Audio.Bitrate(90),
+									bitrate
+								)
+							).converted(
+								bitrate    = bitrate,
+								samplerate = samplerate,
+								format     = yoop.Audio.Format.MP3,
+								channels   = channels
+							).tagged(
+								title  = e.title.simple,
+								album  = playlist.title,
+								artist = e.uploader
+							).covered(
+								playlist.uploader.avatar.resized(150)
 							)
-						).converted(
-							bitrate    = bitrate,
-							samplerate = samplerate,
-							format     = yoop.Audio.Format.MP3,
-							channels   = channels
-						).tagged(
-							title  = e.title.simple,
-							album  = playlist.title,
-							artist = e.uploader
-						).covered(
-							playlist.uploader.avatar.resized(150)
 						)
-					)
+					except yoop.Audio.UnavailableError:
+						pass
 
 				cache.add(e)
 

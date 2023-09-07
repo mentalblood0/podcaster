@@ -1,4 +1,3 @@
-import loguru
 import typing
 import dataclasses
 
@@ -28,7 +27,7 @@ class Retrier(typing.Generic[T]):
 			):
 				raise
 
-			loguru.logger.warning(f'Will retry {self.repeater.f} as it failed with exception {e.__class__.__name__}: {e}')
+			print(f'Will retry {self.repeater.f} as it failed with exception {e.__class__.__name__}: {e}')
 			return False
 
 	def __call__(self):

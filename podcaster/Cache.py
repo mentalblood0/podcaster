@@ -17,43 +17,48 @@ class Cache:
 	quote     : typing.Final[str]          = '"'
 	escape    : typing.Final[str]          = '\\'
 
-	@dataclasses.dataclass(frozen = False, kw_only = False)
+	@dataclasses.dataclass(frozen = False, kw_only = False, unsafe_hash = True)
 	class Entry:
 
-		uploader : str
-		title    : str
-		url      : yoop.Url
+		uploader : str      = dataclasses.field(hash = True)
+		title    : str      = dataclasses.field(hash = True)
+		url      : yoop.Url = dataclasses.field(hash = False)
+		uploaded : str      = dataclasses.field(hash = True)
+		duration : str      = dataclasses.field(hash = True)
 
 		@property
 		def row(self):
 			return (
 				self.uploader,
 				self.title,
-				self.url.value
+				self.url.value,
+				self.uploaded,
+				self.duration
 			)
-
-		def __hash__(self):
-			return hash(self.row[:-1])
 
 		@classmethod
 		def from_video(cls, v: yoop.Video):
 			return cls(
 				v.uploader,
 				v.title.simple,
-				v.url
+				v.url,
+				str(v.uploaded),
+				str(int(v.duration.total_seconds()))
 			)
 
 		@classmethod
-		def from_row(cls, r: tuple[str, str, str] | list[str]) -> typing.Self:
+		def from_row(cls, r: tuple[str, str, str, str, str] | list[str]) -> typing.Self:
 			match r:
 				case tuple():
 					return cls(
 						r[0],
 						r[1],
-						yoop.Url(r[2])
+						yoop.Url(r[2]),
+						r[3],
+						r[4]
 					)
 				case list():
-					if len(r) != 3:
+					if len(r) != 5:
 						raise ValueError
 					return Cache.Entry.from_row(tuple(r))
 
@@ -90,18 +95,22 @@ class Cache:
 				self.entries.add(entry)
 				self.urls.add(entry.url)
 
-	def add(self, video: yoop.Video):
+	def add(self, o: yoop.Video | Entry):
 
-		if (video in self) and (video.url in self.urls):
-			return
+		match o:
 
-		entry = Cache.Entry.from_video(video)
+			case yoop.Video():
+				if (o in self) and (o.url in self.urls):
+					return
+				self.add(Cache.Entry.from_video(o))
 
-		with self.source.open(mode = 'a', newline = '', encoding = 'utf8') as f:
-			self.writer(f).writerow(entry.row)
+			case Cache.Entry():
 
-		self.entries.add(entry)
-		self.urls.add(entry.url)
+				with self.source.open(mode = 'a', newline = '', encoding = 'utf8') as f:
+					self.writer(f).writerow(o.row)
+
+				self.entries.add(o)
+				self.urls.add(o.url)
 
 	def __contains__(self, o: yoop.Video | yoop.Playlist):
 
@@ -113,11 +122,7 @@ class Cache:
 					return True
 
 				if not o.available:
-					self.urls.add(o.url)
-					with self.source.open(mode = 'a', newline = '', encoding = 'utf8') as f:
-						self.writer(f).writerow(
-							Cache.Entry.from_row(('', '', o.url.value)).row
-						)
+					self.add(Cache.Entry.from_row(('', '', o.url.value, '', '')))
 					return o in self
 
 				if Cache.Entry.from_video(o) in self.entries:
