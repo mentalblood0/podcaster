@@ -1,6 +1,7 @@
 import yoop
 import click
 import pathlib
+import traceback
 
 from .Bot   import Bot
 from .Cache import Cache
@@ -40,16 +41,11 @@ def _upload(
 
 				if e not in cache and e.available:
 
-					print(f'video {e.title.simple}')
+					print(f'video {e.title.simple} {e.uploaded}')
 
 					try:
 						bot.load(
-							e.audio(
-								max(
-									yoop.Audio.Bitrate(90),
-									bitrate
-								)
-							).converted(
+							e.audio().converted(
 								bitrate    = bitrate,
 								samplerate = samplerate,
 								format     = yoop.Audio.Format.MP3,
@@ -64,7 +60,8 @@ def _upload(
 							)
 						)
 						cache.add(e)
-					except yoop.Audio.UnavailableError:
+					except yoop.Audio.UnavailableError as exception:
+						print(exception)
 						pass
 
 @cli.command(name = 'upload')
