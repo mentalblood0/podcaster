@@ -42,33 +42,30 @@ def _upload(
 
 					print(f'video {e.title.simple}')
 
-					while True:
-						try:
-							bot.load(
-								e.audio(
-									max(
-										yoop.Audio.Bitrate(90),
-										bitrate
-									)
-								).converted(
-									bitrate    = bitrate,
-									samplerate = samplerate,
-									format     = yoop.Audio.Format.MP3,
-									channels   = channels
-								).tagged(
-									title    = e.title.simple,
-									album    = playlist.title,
-									artist   = e.uploader,
-									date     = str(e.uploaded)
-								).covered(
-									playlist.uploader.avatar.resized(150)
+					try:
+						bot.load(
+							e.audio(
+								max(
+									yoop.Audio.Bitrate(90),
+									bitrate
 								)
+							).converted(
+								bitrate    = bitrate,
+								samplerate = samplerate,
+								format     = yoop.Audio.Format.MP3,
+								channels   = channels
+							).tagged(
+								title    = e.title.simple,
+								album    = playlist.title,
+								artist   = e.uploader,
+								date     = str(e.uploaded)
+							).covered(
+								playlist.uploader.avatar.resized(150)
 							)
-							break
-						except yoop.Audio.UnavailableError:
-							pass
-
-				cache.add(e)
+						)
+						cache.add(e)
+					except yoop.Audio.UnavailableError:
+						pass
 
 @cli.command(name = 'upload')
 @click.option('--url',        required = True,  type = yoop.Url,                                                                                     help = 'Youtube channel or playlist URL')
