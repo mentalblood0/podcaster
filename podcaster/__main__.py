@@ -22,6 +22,7 @@ def _upload(
 ):
 
 	if not playlist.available:
+		cache.add(playlist)
 		return
 
 	if playlist in cache:

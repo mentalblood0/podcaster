@@ -45,13 +45,16 @@ class Cache:
 
 		@classmethod
 		def from_video(cls, v: yoop.Video):
-			return cls(
-				v.uploader,
-				v.title.simple,
-				v.url,
-				str(v.uploaded),
-				str(int(v.duration.total_seconds()))
-			)
+			if v.available:
+				return cls(
+					v.uploader,
+					v.title.simple,
+					v.url,
+					str(v.uploaded),
+					str(int(v.duration.total_seconds()))
+				)
+			else:
+				return cls('', '', v.url, '', '')
 
 		@classmethod
 		def from_row(cls, r: tuple[str, str, str, str, str] | list[str]) -> typing.Self:
@@ -102,7 +105,7 @@ class Cache:
 				self.entries.add(entry)
 				self.urls.add(entry.url)
 
-	def add(self, o: yoop.Video | Entry):
+	def add(self, o: yoop.Video | Entry | yoop.Playlist):
 
 		match o:
 
@@ -117,6 +120,10 @@ class Cache:
 				self.entries.add(o)
 				self.urls.add(o.url)
 
+			case yoop.Playlist():
+				for v in o:
+					self.add(v)
+
 	def __contains__(self, o: yoop.Video | yoop.Playlist):
 
 		match o:
@@ -127,13 +134,14 @@ class Cache:
 					return True
 
 				if not o.available:
-					self.add(Cache.Entry.from_row(('', '', o.url.value, '', '')))
+					self.add(o)
 					return o in self
 
 				if Cache.Entry.from_video(o) in self.entries:
 					self.add(o)
 					return True
 
+				print(o, 'not in cache')
 				return False
 
 			case yoop.Playlist():
