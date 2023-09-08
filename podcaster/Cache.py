@@ -141,7 +141,6 @@ class Cache:
 					self.add(o)
 					return True
 
-				print(o, 'not in cache')
 				return False
 
 			case yoop.Playlist():
