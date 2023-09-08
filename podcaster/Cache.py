@@ -26,6 +26,13 @@ class Cache:
 		uploaded : str      = dataclasses.field(hash = True)
 		duration : str      = dataclasses.field(hash = True)
 
+		def __eq__(self, another: object):
+			match another:
+				case Cache.Entry():
+					return hash(self) == hash(another)
+				case _:
+					return False
+
 		@property
 		def row(self):
 			return (
@@ -100,8 +107,6 @@ class Cache:
 		match o:
 
 			case yoop.Video():
-				if (o in self) and (o.url in self.urls):
-					return
 				self.add(Cache.Entry.from_video(o))
 
 			case Cache.Entry():
@@ -126,6 +131,7 @@ class Cache:
 					return o in self
 
 				if Cache.Entry.from_video(o) in self.entries:
+					self.add(o)
 					return True
 
 				return False
