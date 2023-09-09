@@ -61,7 +61,7 @@ def _upload(
 						)
 						cache.add(e)
 					except yoop.Audio.UnavailableError as exception:
-						print(exception)
+						print(f'exception during processing {e}: {exception.__class__.__name__}: {exception}')
 						pass
 
 @cli.command(name = 'upload')
