@@ -81,11 +81,11 @@ class Bot:
 								'caption'              : '\n'.join(map(str, self.tags(audio))),
 								'title'                : self.title(audio),
 								'performer'            : audio.tags.artist,
-								'duration'             : audio.duration,
+								'duration'             : audio.tags.duration,
 								'protect_content'      : False
 							},
 							files = {
-								'audio'     : audio.data,
+								'audio'     : audio.source.data,
 								'thumbnail' : audio.tags.cover or b''
 							}
 						).status_code,

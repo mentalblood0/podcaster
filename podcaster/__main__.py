@@ -1,5 +1,6 @@
 import yoop
 import click
+import pytags
 import pathlib
 
 from .Bot   import Bot
@@ -60,7 +61,7 @@ def _upload(
 							)
 						)
 						cache.add(e)
-					except yoop.Audio.UnavailableError as exception:
+					except pytags.Media.ValueError as exception:
 						print(f'exception during processing {e}: {exception.__class__.__name__}: {exception}')
 						pass
 
@@ -73,13 +74,13 @@ def _upload(
 @click.option('--samplerate', required = False, type = yoop.Audio.Samplerate,                                default = 32000,                          help = 'Resulting audio samplerate')
 @click.option('--channels',   required = False, type = click.Choice([c.value for c in yoop.Audio.Channels]), default = yoop.Audio.Channels.mono.value, help = 'Resulting audio channels')
 def upload(
-	url           : yoop.Url,
-	token         : str,
-	telegram      : str,
-	cache         : pathlib.Path,
-	bitrate       : yoop.Audio.Bitrate,
-	samplerate    : yoop.Audio.Samplerate,
-	channels      : str
+	url        : yoop.Url,
+	token      : str,
+	telegram   : str,
+	cache      : pathlib.Path,
+	bitrate    : yoop.Audio.Bitrate,
+	samplerate : yoop.Audio.Samplerate,
+	channels   : str
 ):
 
 	if yoop.Playlist(url)[0] in (_cache := Cache(cache)):
