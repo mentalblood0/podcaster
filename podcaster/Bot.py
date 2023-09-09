@@ -82,7 +82,6 @@ class Bot:
 								'title'                : self.title(audio),
 								'performer'            : audio.tags.artist,
 								'duration'             : audio.duration,
-								'disable_notification' : True,
 								'protect_content'      : False
 							},
 							files = {
