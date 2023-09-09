@@ -93,4 +93,4 @@ class Bot:
 					)
 				)()
 			) != 200:
-				print(f'{audio.tags["artist"][0]} - {audio.tags["title"][0]} {status_code}')
+				print(f'Non-200 status code when uploading to telegram audio {audio.tags.artist} - {audio.tags.title}: {status_code}')
