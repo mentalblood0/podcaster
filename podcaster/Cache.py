@@ -133,11 +133,7 @@ class Cache:
 				if o.url in self.urls:
 					return True
 
-				if not o.available:
-					self.add(o)
-					return o in self
-
-				if Cache.Entry.from_video(o) in self.entries:
+				if (not o.available) or (Cache.Entry.from_video(o) in self.entries):
 					self.add(o)
 					return True
 

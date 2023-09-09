@@ -4,6 +4,7 @@ import math
 import datetime
 import requests
 import dataclasses
+import urllib3.exceptions
 
 from .Retrier  import Retrier
 from .Repeater import Repeater
@@ -66,7 +67,12 @@ class Bot:
 		else:
 			while (
 				status_code := Retrier(
-					exceptions = {requests.exceptions.ConnectTimeout},
+					exceptions = {
+						requests.exceptions.ConnectTimeout,
+						urllib3.exceptions.TimeoutError,
+						urllib3.exceptions.ConnectTimeoutError,
+						urllib3.exceptions.MaxRetryError
+					},
 					repeater   = Repeater(
 						f = lambda: requests.post(
 							f'https://api.telegram.org/bot{self.token}/sendAudio',
