@@ -81,13 +81,17 @@ def upload(
 	samplerate    : yoop.Audio.Samplerate,
 	channels      : str
 ):
-	for p in (
-		yoop.Playlist(url / 'playlists'),
-		yoop.Playlist(url),
+
+	if yoop.Playlist(url)[0] in (_cache := Cache(cache)):
+		return
+
+	for address in (
+		url / 'playlists',
+		url,
 	):
 		_upload(
-			playlist   = p,
-			cache      = Cache(cache),
+			playlist   = yoop.Playlist(address),
+			cache      = _cache,
 			bitrate    = bitrate,
 			samplerate = samplerate,
 			channels   = yoop.Audio.Channels(channels),
