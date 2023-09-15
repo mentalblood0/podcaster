@@ -7,3 +7,4 @@ __pycache__
 build
 cache*.csv
 migration*
+test.py

@@ -40,7 +40,10 @@ def _upload(
 
 			case yoop.Video():
 
-				if e not in cache and e.available:
+				if e not in cache:
+
+					if not e.available:
+						continue
 
 					print(f'video {e.title.simple} {e.uploaded}')
 
@@ -73,17 +76,24 @@ def _upload(
 @click.option('--bitrate',    required = False, type = yoop.Audio.Bitrate,                                   default = 80,                             help = 'Resulting audio bitrate')
 @click.option('--samplerate', required = False, type = yoop.Audio.Samplerate,                                default = 32000,                          help = 'Resulting audio samplerate')
 @click.option('--channels',   required = False, type = click.Choice([c.value for c in yoop.Audio.Channels]), default = yoop.Audio.Channels.mono.value, help = 'Resulting audio channels')
+@click.option('--previously-unavailable/--no-previously-unavailable', default=False)
 def upload(
-	url        : yoop.Url,
-	token      : str,
-	telegram   : str,
-	cache      : pathlib.Path,
-	bitrate    : yoop.Audio.Bitrate,
-	samplerate : yoop.Audio.Samplerate,
-	channels   : str
+	url                    : yoop.Url,
+	token                  : str,
+	telegram               : str,
+	cache                  : pathlib.Path,
+	bitrate                : yoop.Audio.Bitrate,
+	samplerate             : yoop.Audio.Samplerate,
+	channels               : str,
+	previously_unavailable : bool
 ):
 
-	if yoop.Playlist(url)[0] in (_cache := Cache(cache)):
+	if yoop.Playlist(url)[0] in (
+		_cache := Cache(
+			source      = cache,
+			unavailable = not previously_unavailable
+		)
+	):
 		return
 
 	for address in (
