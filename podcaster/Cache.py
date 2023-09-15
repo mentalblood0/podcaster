@@ -159,8 +159,6 @@ class Cache:
 
 	def __contains__(self, o: yoop.Video | yoop.Playlist):
 
-		print(f'contains {o}')
-
 		match o:
 
 			case yoop.Video():
