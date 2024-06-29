@@ -1,7 +1,7 @@
 import pathlib
+import sys
 
 import click
-import pytags
 import yoop
 
 from .Bot import Bot
@@ -25,16 +25,20 @@ def _upload(
         cache.add(playlist)
         return
 
-    print(f"<-- {playlist.title}")
-
     for e in playlist[::1]:
         match e:
             case yoop.Playlist():
+                if not len(playlist):
+                    continue
                 if playlist in cache:
-                    break
+                    print(f"{e.title} already exists")
+                    continue
+                print(f"<-- {e.title}")
                 _upload(e, bot, cache, bitrate, samplerate, channels)
 
             case yoop.Media():
+                if e.liveness not in (yoop.Media.Liveness.was, yoop.Media.Liveness.no):
+                    continue
                 if e in cache:
                     break
                 if not e.available:
@@ -42,10 +46,11 @@ def _upload(
                     continue
 
                 print(f"<-- {e.title.simple} {e.uploaded}", end="")
+                sys.stdout.flush()
 
                 try:
                     downloaded = e.audio(bitrate)
-                    if downloaded.estimated_converted_size(bitrate) < len(downloaded):
+                    if (downloaded.megabytes >= 50) or (downloaded.estimated_converted_size(bitrate) < len(downloaded)):
                         converted = downloaded.converted(
                             bitrate=bitrate, samplerate=samplerate, format=yoop.Audio.Format.MP3, channels=channels
                         )
@@ -66,6 +71,7 @@ def _upload(
                     cache.add(e)
                 except ValueError as exception:
                     print(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
+                    raise
                     pass
 
 
@@ -85,7 +91,6 @@ def _upload(
     default=yoop.Audio.Channels.mono.value,
     help="Resulting audio channels",
 )
-@click.option("--previously-unavailable/--no-previously-unavailable", default=False)
 def upload(
     url: yoop.Url,
     token: str,
@@ -94,13 +99,9 @@ def upload(
     bitrate: yoop.Audio.Bitrate,
     samplerate: yoop.Audio.Samplerate,
     channels: str,
-    previously_unavailable: bool,
 ):
-    _cache = Cache(source=cache, unavailable=not previously_unavailable)
-    if (not previously_unavailable) and (yoop.Playlist(url)[0] in _cache):
-        return
-
-    for address in (url / "playlists", url):
+    _cache = Cache(source=cache, unavailable=False)
+    for address in (url / "streams", url / "playlists", url):
         _upload(
             playlist=yoop.Playlist(address),
             cache=_cache,

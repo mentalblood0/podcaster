@@ -51,7 +51,7 @@ class Bot:
     def load(self, audio: yoop.Audio, tags: Tags):
         print(f"--> {tags.title_with_part} {audio.duration} {int(len(audio) / 1024 / 1024)}MB")
         if len(audio) >= 50 * 1000 * 1000:
-            for i, a in enumerate(audio.splitted(math.ceil(len(audio) / (50 * 1000 * 1000)))):
+            for i, a in enumerate(audio.splitted(math.ceil(audio.megabytes / 50))):
                 self.load(a, dataclasses.replace(tags, part=i + 1))
         else:
             while (

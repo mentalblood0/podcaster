@@ -153,4 +153,7 @@ class Cache:
                 return False
 
             case yoop.Playlist():
-                return o[0] in self
+                try:
+                    return o[0] in self
+                except IndexError:
+                    return True
