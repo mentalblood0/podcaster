@@ -1,96 +1,84 @@
-import re
-import yoop
-import math
-import datetime
-import requests
 import dataclasses
+import datetime
+import math
+import re
+
+import requests
 import urllib3.exceptions
+import yoop
 
-from .Retrier  import Retrier
 from .Repeater import Repeater
+from .Retrier import Retrier
 
 
-
-@dataclasses.dataclass(frozen = True, kw_only = False)
-class Tag:
-
-	source : str
-
-	def __repr__(self):
-		return '#' + ''.join(
-			word.title()
-			for word in re.sub(
-				r'[^\w\s]',
-				'',
-				self.source
-			).split(' ')
-		)
-
-
-@dataclasses.dataclass(frozen = True, kw_only = True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Bot:
+    token: str
+    chat: str
 
-	token : str
-	chat  : str
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class Tags:
+        artist: str
+        album: str
+        title: str
+        date: datetime.datetime
+        cover: bytes
+        part: int | None = None
 
-	def tags(self, audio: yoop.Audio):
-		return filter(
-			lambda t: not str(t).endswith('#'),
-			map(
-				Tag,
-				(
-					audio.tags.artist,
-					audio.tags.album,
-					audio.tags.title,
-					f"Released_{audio.tags.date.year}_{audio.tags.date.month}_{audio.tags.date.day}",
-					f'part {audio.part}' if audio.part else ''
-				)
-			)
-		)
+        @property
+        def title_with_part(self):
+            if self.part is None:
+                return self.title
+            else:
+                return f"{self.title} - {self.part}"
 
-	def title(self, audio: yoop.Audio):
-		if audio.part is None:
-			return audio.tags.title
-		else:
-			return f'{self.title(dataclasses.replace(audio, part = None))} - {audio.part}'
+        @classmethod
+        def tag(cls, s: str):
+            return "#" + "".join(word.title() for word in re.sub(r"[^\w\s]", "", s).split(" "))
 
-	def load(self, audio: yoop.Audio):
-		if len(audio) >= 50 * 1000 * 1000:
-			for a in [
-				*audio.splitted(
-					math.ceil(
-						len(audio) / (50 * 1000 * 1000)
-					)
-				)
-			]:
-				self.load(a)
-		else:
-			while (
-				status_code := Retrier(
-					exceptions = {
-						requests.exceptions.ConnectTimeout,
-						urllib3.exceptions.TimeoutError,
-						urllib3.exceptions.ConnectTimeoutError,
-						urllib3.exceptions.MaxRetryError
-					},
-					repeater   = Repeater(
-						f = lambda: requests.post(
-							f'https://api.telegram.org/bot{self.token}/sendAudio',
-							data  = {
-								'chat_id'              : self.chat,
-								'caption'              : '\n'.join(map(str, self.tags(audio))),
-								'title'                : self.title(audio),
-								'performer'            : audio.tags.artist,
-								'duration'             : audio.tags.duration,
-								'protect_content'      : False
-							},
-							files = {
-								'audio'     : audio.source.data,
-								'thumbnail' : audio.tags.cover or b''
-							}
-						).status_code,
-						interval = datetime.timedelta(seconds = 3)
-					)
-				)()
-			) != 200:
-				print(f'Non-200 status code when uploading to telegram audio {audio.tags.artist} - {audio.tags.title}: {status_code}')
+        def __str__(self):
+            result = [
+                self.tag(self.artist),
+                self.tag(self.album),
+                self.tag(self.title),
+                self.tag(f"Released_{self.date.year}_{self.date.month}_{self.date.day}")
+                + f" {self.date.hour:02}:{self.date.minute:02}:{self.date.second:02}",
+            ]
+            if self.part is not None:
+                result.append(self.tag(f"part{self.part}"))
+            return "\n".join(result)
+
+    def load(self, audio: yoop.Audio, tags: Tags):
+        print(f"--> {tags.title_with_part} {audio.duration} ~{int(len(audio)) / 1024 / 1024}MB")
+        if len(audio) >= 50 * 1000 * 1000:
+            for i, a in enumerate(audio.splitted(math.ceil(len(audio) / (50 * 1000 * 1000)))):
+                self.load(a, dataclasses.replace(tags, part=i + 1))
+        else:
+            while (
+                status_code := Retrier(
+                    exceptions={
+                        requests.exceptions.ConnectTimeout,
+                        urllib3.exceptions.TimeoutError,
+                        urllib3.exceptions.ConnectTimeoutError,
+                        urllib3.exceptions.MaxRetryError,
+                    },
+                    repeater=Repeater(
+                        f=lambda: requests.post(
+                            f"https://api.telegram.org/bot{self.token}/sendAudio",
+                            data={
+                                "chat_id": self.chat,
+                                "caption": str(tags),
+                                "title": tags.title_with_part,
+                                "performer": tags.artist,
+                                "duration": audio.duration.total_seconds(),
+                                "protect_content": False,
+                            },
+                            files={"audio": audio.verified.data, "thumbnail": tags.cover},
+                        ).status_code,
+                        interval=datetime.timedelta(seconds=3),
+                    ),
+                )()
+            ) != 200:
+                print(
+                    f"Non-200 status code when uploading to telegram audio {tags.artist} - {tags.title}: {status_code}"
+                )
