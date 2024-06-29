@@ -1,5 +1,4 @@
 import pathlib
-import sys
 
 import click
 import yoop
@@ -21,35 +20,32 @@ def _upload(
     samplerate: yoop.Audio.Samplerate,
     channels: yoop.Audio.Channels,
 ):
-    if not playlist.available:
-        cache.add(playlist)
+    if playlist in cache:
         return
-
     for e in playlist[::1]:
         match e:
             case yoop.Playlist():
-                if not len(playlist):
+                if not playlist.available:
                     continue
-                if playlist in cache:
-                    print(f"{e.title} already exists")
+                if not len(playlist):
                     continue
                 print(f"<-- {e.title}")
                 _upload(e, bot, cache, bitrate, samplerate, channels)
 
             case yoop.Media():
+                print(e.liveness)
                 if e.liveness not in (yoop.Media.Liveness.was, yoop.Media.Liveness.no):
                     continue
                 if e in cache:
                     break
                 if not e.available:
-                    print(f"{e.title.simple} not available")
                     continue
 
-                print(f"<-- {e.title.simple} {e.uploaded}", end="")
-                sys.stdout.flush()
+                print(f"<-- {e.title.simple} {e.uploaded}", end="", flush=True)
 
                 try:
                     downloaded = e.audio(bitrate)
+                    print(f" {downloaded.megabytes}MB", end="", flush=True)
                     if (downloaded.megabytes >= 50) or (downloaded.estimated_converted_size(bitrate) < len(downloaded)):
                         converted = downloaded.converted(
                             bitrate=bitrate, samplerate=samplerate, format=yoop.Audio.Format.MP3, channels=channels
@@ -57,7 +53,7 @@ def _upload(
                     else:
                         converted = downloaded
 
-                    print(f" {downloaded.megabytes}MB -> {converted.megabytes}MB")
+                    print(f" -> {converted.megabytes}MB")
                     bot.load(
                         audio=converted,
                         tags=Bot.Tags(
@@ -71,8 +67,6 @@ def _upload(
                     cache.add(e)
                 except ValueError as exception:
                     print(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
-                    raise
-                    pass
 
 
 @cli.command(name="upload")
