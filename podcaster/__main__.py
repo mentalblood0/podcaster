@@ -25,40 +25,48 @@ def _upload(
         cache.add(playlist)
         return
 
-    if playlist in cache:
-        return
-
     print(f"<-- {playlist.title}")
 
-    for e in playlist[::-1]:
+    for e in playlist[::1]:
         match e:
             case yoop.Playlist():
+                if playlist in cache:
+                    break
                 _upload(e, bot, cache, bitrate, samplerate, channels)
 
             case yoop.Media():
-                if e not in cache:
-                    if not e.available:
-                        continue
+                if e in cache:
+                    break
+                if not e.available:
+                    print(f"{e.title.simple} not available")
+                    continue
 
-                    print(f"<-- {e.title.simple} {e.uploaded}")
+                print(f"<-- {e.title.simple} {e.uploaded}", end="")
 
-                    try:
-                        bot.load(
-                            audio=e.audio().converted(
-                                bitrate=bitrate, samplerate=samplerate, format=yoop.Audio.Format.MP3, channels=channels
-                            ),
-                            tags=Bot.Tags(
-                                cover=playlist.uploader.avatar.resized(150),
-                                title=e.title.simple,
-                                album=playlist.title,
-                                artist=e.uploader,
-                                date=e.uploaded,
-                            ),
+                try:
+                    downloaded = e.audio(bitrate)
+                    if downloaded.estimated_converted_size(bitrate) < len(downloaded):
+                        converted = downloaded.converted(
+                            bitrate=bitrate, samplerate=samplerate, format=yoop.Audio.Format.MP3, channels=channels
                         )
-                        cache.add(e)
-                    except pytags.Media.ValueError as exception:
-                        print(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
-                        pass
+                    else:
+                        converted = downloaded
+
+                    print(f" {downloaded.megabytes}MB -> {converted.megabytes}MB")
+                    bot.load(
+                        audio=converted,
+                        tags=Bot.Tags(
+                            cover=playlist.uploader.avatar.resized(150),
+                            title=e.title.simple,
+                            album=playlist.title,
+                            artist=e.uploader,
+                            date=e.uploaded,
+                        ),
+                    )
+                    cache.add(e)
+                except ValueError as exception:
+                    print(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
+                    pass
 
 
 @cli.command(name="upload")

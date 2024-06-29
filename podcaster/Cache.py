@@ -153,4 +153,4 @@ class Cache:
                 return False
 
             case yoop.Playlist():
-                return all(v in self for v in o)
+                return o[0] in self
