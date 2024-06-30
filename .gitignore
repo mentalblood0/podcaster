@@ -8,3 +8,5 @@ build
 cache*.csv
 migration*
 test.py
+cache/*
+

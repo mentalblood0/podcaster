@@ -4,7 +4,7 @@ import click
 import yoop
 
 from .Bot import Bot
-from .Cache import Cache
+from .Cache import Cache, Entry
 
 
 @click.group
@@ -33,7 +33,6 @@ def _upload(
                 _upload(e, bot, cache, bitrate, samplerate, channels)
 
             case yoop.Media():
-                print(e.liveness)
                 if e.liveness not in (yoop.Media.Liveness.was, yoop.Media.Liveness.no):
                     continue
                 if e in cache:
@@ -64,7 +63,7 @@ def _upload(
                             date=e.uploaded,
                         ),
                     )
-                    cache.add(e)
+                    cache.add(Entry.from_video(e))
                 except ValueError as exception:
                     print(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
 
@@ -94,7 +93,7 @@ def upload(
     samplerate: yoop.Audio.Samplerate,
     channels: str,
 ):
-    _cache = Cache(source=cache, unavailable=False)
+    _cache = Cache(cache)
     for address in (url / "streams", url / "playlists", url):
         _upload(
             playlist=yoop.Playlist(address),
@@ -106,10 +105,32 @@ def upload(
         )
 
 
+def _cache_all(playlist: yoop.Playlist, cache: Cache):
+    for e in playlist.items:
+        if isinstance(e, yoop.Playlist):
+            _cache_all(e, cache)
+        elif isinstance(e, yoop.Media):
+            if e in cache:
+                print(f"{e.url} already exists")
+                continue
+            entry = Entry.from_video(e)
+            cache.add(entry)
+            print(entry.row)
+
+
+@cli.command(name="cache_all")
+@click.option("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
+@click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
+def cache_all(url: yoop.Url, cache: pathlib.Path):
+    _cache = Cache(cache)
+    for address in (url / "streams", url / "playlists", url):
+        _cache_all(yoop.Playlist(address), _cache)
+
+
 @cli.command(name="clean")
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
 def clean(cache: pathlib.Path):
-    Cache(source=cache, unavailable=True).dump()
+    Cache(cache).dump()
 
 
 cli()
