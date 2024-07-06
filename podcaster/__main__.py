@@ -70,6 +70,9 @@ def _upload(
 
 @cli.command(name="upload")
 @click.option("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
+@click.option(
+    "-s", "--suffixes", required=True, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
+)
 @click.option("--token", required=True, type=str, help="Telegram bot token")
 @click.option("--telegram", required=True, type=str, help="Telegram chat id")
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
@@ -86,6 +89,7 @@ def _upload(
 )
 def upload(
     url: yoop.Url,
+    suffixes: str,
     token: str,
     telegram: str,
     cache: pathlib.Path,
@@ -94,9 +98,9 @@ def upload(
     channels: str,
 ):
     _cache = Cache(cache)
-    for address in (url / "streams", url / "playlists", url):
+    for u in [url] + [url / s for s in suffixes]:
         _upload(
-            playlist=yoop.Playlist(address),
+            playlist=yoop.Playlist(u),
             cache=_cache,
             bitrate=bitrate,
             samplerate=samplerate,
@@ -120,11 +124,14 @@ def _cache_all(playlist: yoop.Playlist, cache: Cache):
 
 @cli.command(name="cache_all")
 @click.option("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
+@click.option(
+    "-s", "--suffixes", required=True, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
+)
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
-def cache_all(url: yoop.Url, cache: pathlib.Path):
+def cache_all(url: yoop.Url, suffixes: list[str], cache: pathlib.Path):
     _cache = Cache(cache)
-    for address in (url / "streams", url / "playlists", url):
-        _cache_all(yoop.Playlist(address), _cache)
+    for u in [url] + [url / s for s in suffixes]:
+        _cache_all(yoop.Playlist(u), _cache)
 
 
 @cli.command(name="clean")
