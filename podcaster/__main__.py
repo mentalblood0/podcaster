@@ -17,50 +17,68 @@ def _upload(
     bot: Bot,
     cache: Cache,
     bitrate: yoop.Audio.Bitrate,
+    format: yoop.Audio.Format | None,
     samplerate: yoop.Audio.Samplerate,
     channels: yoop.Audio.Channels,
+    portioning_depth: int,
+    convert: str,
 ):
     if playlist in cache:
         return
-    for e in playlist[::1]:
+    for e in playlist[::1] if portioning_depth > 0 else playlist.items:
         match e:
             case yoop.Playlist():
-                if not playlist.available:
+                if not e.available:
                     continue
-                if not len(playlist):
+                if not len(e):
                     continue
                 print(f"<-- {e.title}")
-                _upload(e, bot, cache, bitrate, samplerate, channels)
+                _upload(
+                    playlist=e,
+                    bot=bot,
+                    cache=cache,
+                    bitrate=bitrate,
+                    format=format,
+                    samplerate=samplerate,
+                    channels=channels,
+                    portioning_depth=portioning_depth - 1,
+                    convert=convert,
+                )
 
             case yoop.Media():
-                if e.liveness not in (yoop.Media.Liveness.was, yoop.Media.Liveness.no):
+                if not e.available:
                     continue
                 if e in cache:
                     break
-                if not e.available:
-                    continue
 
                 print(f"<-- {e.title.simple} {e.uploaded}", end="", flush=True)
 
                 try:
-                    downloaded = e.audio(bitrate)
+                    downloaded = e.audio(format if format is not None else bitrate)
                     print(f" {downloaded.megabytes}MB", end="", flush=True)
-                    if (downloaded.megabytes >= 50) or (downloaded.estimated_converted_size(bitrate) < len(downloaded)):
+
+                    converted = downloaded
+                    if (
+                        (convert == "always")
+                        or (
+                            (convert == "reduce_size")
+                            and downloaded.estimated_converted_size(bitrate) < len(downloaded)
+                        )
+                        or (downloaded.megabytes >= 50)
+                    ):
                         converted = downloaded.converted(
                             bitrate=bitrate, samplerate=samplerate, format=yoop.Audio.Format.MP3, channels=channels
                         )
-                    else:
-                        converted = downloaded
 
                     print(f" -> {converted.megabytes}MB")
                     bot.load(
                         audio=converted,
                         tags=Bot.Tags(
-                            cover=playlist.uploader.avatar.resized(150),
                             title=e.title.simple,
                             album=playlist.title,
                             artist=e.uploader,
                             date=e.uploaded,
+                            cover=e.thumbnail(150),
                         ),
                     )
                     cache.add(Entry.from_video(e))
@@ -71,15 +89,14 @@ def _upload(
 @cli.command(name="upload")
 @click.option("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
 @click.option(
-    "-s", "--suffixes", required=True, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
+    "-s", "--suffixes", required=False, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
 )
 @click.option("--token", required=True, type=str, help="Telegram bot token")
 @click.option("--telegram", required=True, type=str, help="Telegram chat id")
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
-@click.option("--bitrate", required=False, type=yoop.Audio.Bitrate, default=80, help="Resulting audio bitrate")
-@click.option(
-    "--samplerate", required=False, type=yoop.Audio.Samplerate, default=32000, help="Resulting audio samplerate"
-)
+@click.option("--bitrate", required=False, type=int, default=80, help="Preferable audio bitrate")
+@click.option("--format", required=False, type=yoop.Audio.Format, help="Preferable audio format")
+@click.option("--samplerate", required=False, type=int, default=32000, help="Preferable audio samplerate")
 @click.option(
     "--channels",
     required=False,
@@ -87,25 +104,45 @@ def _upload(
     default=yoop.Audio.Channels.mono.value,
     help="Resulting audio channels",
 )
+@click.option(
+    "--convert",
+    required=False,
+    type=click.Choice(["always", "reduce_size", "no"]),
+    default="reduce_size",
+    help="How to convert",
+)
+@click.option(
+    "--portioning_depth",
+    required=False,
+    type=int,
+    default=2,
+    help="Depth of playlists for one-by-one items getting instead of getting all items at once",
+)
 def upload(
     url: yoop.Url,
     suffixes: str,
     token: str,
     telegram: str,
     cache: pathlib.Path,
-    bitrate: yoop.Audio.Bitrate,
-    samplerate: yoop.Audio.Samplerate,
+    bitrate: int,
+    format: yoop.Audio.Format | None,
+    samplerate: int,
     channels: str,
+    portioning_depth: int,
+    convert: str,
 ):
     _cache = Cache(cache)
-    for u in [url] + [url / s for s in suffixes]:
+    for u in [url / s for s in suffixes] + [url]:
         _upload(
-            playlist=yoop.Playlist(u),
+            playlist=yoop.Playlist(u, content=yoop.Playlist if url.value.endswith("/") else yoop.Media),
             cache=_cache,
-            bitrate=bitrate,
-            samplerate=samplerate,
+            bitrate=yoop.Audio.Bitrate(bitrate),
+            format=format,
+            samplerate=yoop.Audio.Samplerate(samplerate),
             channels=yoop.Audio.Channels(channels),
             bot=Bot(token=token, chat=telegram),
+            portioning_depth=portioning_depth,
+            convert=convert,
         )
 
 
@@ -125,13 +162,13 @@ def _cache_all(playlist: yoop.Playlist, cache: Cache):
 @cli.command(name="cache_all")
 @click.option("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
 @click.option(
-    "-s", "--suffixes", required=True, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
+    "-s", "--suffixes", required=False, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
 )
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
 def cache_all(url: yoop.Url, suffixes: list[str], cache: pathlib.Path):
     _cache = Cache(cache)
     for u in [url] + [url / s for s in suffixes]:
-        _cache_all(yoop.Playlist(u), _cache)
+        _cache_all(yoop.Playlist(u, content=yoop.Playlist if url.value.endswith("/") else yoop.Media), _cache)
 
 
 @cli.command(name="clean")
