@@ -150,7 +150,6 @@ class Cache:
                         self.add(e)
                     return True
             except:
-                raise
                 return True
 
             return False

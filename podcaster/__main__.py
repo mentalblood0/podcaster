@@ -25,7 +25,7 @@ def _upload(
 ):
     if playlist in cache:
         return
-    for e in playlist[::1] if portioning_depth > 0 else playlist.items:
+    for e in playlist if portioning_depth > 0 else playlist.items:
         match e:
             case yoop.Playlist():
                 if not e.available:
