@@ -3,9 +3,11 @@ import csv
 import dataclasses
 import datetime
 import io
+import logging
 import pathlib
 import time
 import typing
+import zlib
 
 import yoop
 
@@ -26,7 +28,9 @@ class Entry:
                 if "watch?v=" in url.value:
                     return cls(url.value.split("watch?v=")[-1])
                 return cls(url.value.split("/")[-1])
-            return cls(url.value)
+            return cls(
+                base64.b64encode(zlib.adler32(url.value.encode()).to_bytes(length=4, byteorder="big"))[:-2].decode()
+            )
 
     def __eq__(self, another: object):
         if not isinstance(another, Entry):
@@ -120,7 +124,7 @@ class Cache:
             for row in self.reader(f):
                 self.entries.add(Entry.from_row(row))
         end = time.time()
-        print(f"cache loading took {end - start} seconds")
+        logging.info(f"{self.source} loading took {end - start} seconds")
 
     def dump(self):
         temp = self.source.with_suffix(".temp")

@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import click
@@ -5,6 +6,8 @@ import yoop
 
 from .Bot import Bot
 from .Cache import Cache, Entry
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s  %(message)s")
 
 
 @click.group
@@ -32,7 +35,7 @@ def _upload(
                     continue
                 if not len(e):
                     continue
-                print(f"<-- {e.title}")
+                logging.info(f"<-- {e.title}")
                 _upload(
                     playlist=e,
                     bot=bot,
@@ -51,26 +54,23 @@ def _upload(
                 if e in cache:
                     break
 
-                print(f"<-- {e.title.simple} {e.uploaded}", end="", flush=True)
+                logging.info(f"<-- {e.title.simple} {e.uploaded}")
 
                 try:
                     downloaded = e.audio(format if format is not None else bitrate)
-                    print(f" {downloaded.megabytes}MB", end="", flush=True)
 
                     converted = downloaded
                     if (
                         (convert == "always")
                         or (
                             (convert == "reduce_size")
-                            and downloaded.estimated_converted_size(bitrate) < len(downloaded)
+                            and downloaded.estimated_converted_size(bitrate) < 0.9 * len(downloaded)
                         )
                         or (downloaded.megabytes >= 50)
                     ):
                         converted = downloaded.converted(
                             bitrate=bitrate, samplerate=samplerate, format=yoop.Audio.Format.MP3, channels=channels
                         )
-
-                    print(f" -> {converted.megabytes}MB")
                     bot.load(
                         audio=converted,
                         tags=Bot.Tags(
@@ -83,7 +83,7 @@ def _upload(
                     )
                     cache.add(Entry.from_video(e))
                 except ValueError as exception:
-                    print(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
+                    logging.error(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
 
 
 @cli.command(name="upload")
@@ -152,11 +152,11 @@ def _cache_all(playlist: yoop.Playlist, cache: Cache):
             _cache_all(e, cache)
         elif isinstance(e, yoop.Media):
             if e in cache:
-                print(f"{e.url} already exists")
+                logging.warning(f"{e.url} already exists")
                 continue
             entry = Entry.from_video(e)
             cache.add(entry)
-            print(entry.row)
+            logging.info(entry.row)
 
 
 @cli.command(name="cache_all")

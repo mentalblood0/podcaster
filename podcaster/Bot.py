@@ -1,5 +1,6 @@
 import dataclasses
 import datetime
+import logging
 import math
 import re
 
@@ -49,11 +50,11 @@ class Bot:
             return "\n".join(result)
 
     def load(self, audio: yoop.Audio, tags: Tags):
-        print(f"--> {tags.title_with_part} {int(len(audio) / 1024 / 1024)}MB")
         if audio.megabytes >= 50:
             for i, a in enumerate(audio.splitted(math.ceil(len(audio) / 1024 / 1024 / 50))):
                 self.load(a, dataclasses.replace(tags, part=i + 1))
         else:
+            logging.info(f"--> {tags.title_with_part} {audio.megabytes}MB")
             while (
                 status_code := Retrier(
                     exceptions={
@@ -79,6 +80,6 @@ class Bot:
                     ),
                 )()
             ) != 200:
-                print(
+                logging.info(
                     f"Non-200 status code when uploading to telegram audio {tags.artist} - {tags.title}: {status_code}"
                 )
