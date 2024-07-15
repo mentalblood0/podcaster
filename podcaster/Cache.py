@@ -124,7 +124,7 @@ class Cache:
             for row in self.reader(f):
                 self.entries.add(Entry.from_row(row))
         end = time.time()
-        logging.info(f"{self.source} loading took {end - start} seconds")
+        logging.info(f"{self.source} loading took {end - start:0.4} seconds")
 
     def dump(self):
         temp = self.source.with_suffix(".temp")
@@ -162,4 +162,4 @@ class Cache:
             try:
                 return o[0] in self
             except IndexError:
-                return True
+                return False

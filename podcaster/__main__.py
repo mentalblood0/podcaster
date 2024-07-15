@@ -23,12 +23,13 @@ def _upload(
     format: yoop.Audio.Format | None,
     samplerate: yoop.Audio.Samplerate,
     channels: yoop.Audio.Channels,
-    portioning_depth: int,
     convert: str,
+    order: str,
 ):
-    if playlist in cache:
-        return
-    for e in playlist if portioning_depth > 0 else playlist.items:
+    if order != "old_first":
+        if playlist in cache:
+            return
+    for e in playlist if order == "new_first" else playlist[::-1]:
         match e:
             case yoop.Playlist():
                 if not e.available:
@@ -44,14 +45,16 @@ def _upload(
                     format=format,
                     samplerate=samplerate,
                     channels=channels,
-                    portioning_depth=portioning_depth - 1,
                     convert=convert,
+                    order=order,
                 )
 
             case yoop.Media():
                 if not e.available:
                     continue
                 if e in cache:
+                    if order == "old_first":
+                        continue
                     break
 
                 logging.info(f"<-- {e.title.simple} {e.uploaded}")
@@ -82,7 +85,7 @@ def _upload(
                         ),
                     )
                     cache.add(Entry.from_video(e))
-                except ValueError as exception:
+                except Exception as exception:
                     logging.error(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
 
 
@@ -112,11 +115,7 @@ def _upload(
     help="How to convert",
 )
 @click.option(
-    "--portioning_depth",
-    required=False,
-    type=int,
-    default=2,
-    help="Depth of playlists for one-by-one items getting instead of getting all items at once",
+    "--order", required=False, type=click.Choice(["new_first", "old_first"]), default="new_first", help="How to order"
 )
 def upload(
     url: yoop.Url,
@@ -128,21 +127,21 @@ def upload(
     format: yoop.Audio.Format | None,
     samplerate: int,
     channels: str,
-    portioning_depth: int,
     convert: str,
+    order: str,
 ):
     _cache = Cache(cache)
     for u in [url / s for s in suffixes] + [url]:
         _upload(
-            playlist=yoop.Playlist(u, content=yoop.Playlist if url.value.endswith("/") else yoop.Media),
+            playlist=yoop.Playlist(u),
             cache=_cache,
             bitrate=yoop.Audio.Bitrate(bitrate),
             format=format,
             samplerate=yoop.Audio.Samplerate(samplerate),
             channels=yoop.Audio.Channels(channels),
             bot=Bot(token=token, chat=telegram),
-            portioning_depth=portioning_depth,
             convert=convert,
+            order=order,
         )
 
 
@@ -168,7 +167,7 @@ def _cache_all(playlist: yoop.Playlist, cache: Cache):
 def cache_all(url: yoop.Url, suffixes: list[str], cache: pathlib.Path):
     _cache = Cache(cache)
     for u in [url] + [url / s for s in suffixes]:
-        _cache_all(yoop.Playlist(u, content=yoop.Playlist if url.value.endswith("/") else yoop.Media), _cache)
+        _cache_all(yoop.Playlist(u), _cache)
 
 
 @cli.command(name="clean")
