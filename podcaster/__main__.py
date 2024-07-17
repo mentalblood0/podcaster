@@ -26,7 +26,7 @@ def _upload(
     convert: str,
     order: str,
 ):
-    if order != "old_first":
+    if order == "new_first":
         if playlist in cache:
             return
     for e in playlist if order == "new_first" else playlist[::-1]:
@@ -115,7 +115,11 @@ def _upload(
     help="How to convert",
 )
 @click.option(
-    "--order", required=False, type=click.Choice(["new_first", "old_first"]), default="new_first", help="How to order"
+    "--order",
+    required=False,
+    type=click.Choice(["auto", "new_first", "old_first"]),
+    default="auto",
+    help="How to order",
 )
 def upload(
     url: yoop.Url,
@@ -131,6 +135,8 @@ def upload(
     order: str,
 ):
     _cache = Cache(cache)
+    if order == "auto":
+        order = "new_first" if len(_cache) else "old_first"
     for u in [url / s for s in suffixes] + [url]:
         _upload(
             playlist=yoop.Playlist(u),

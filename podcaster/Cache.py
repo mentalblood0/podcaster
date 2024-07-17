@@ -106,6 +106,9 @@ class Cache:
     def __post_init__(self):
         self.load()
 
+    def __len__(self):
+        return len(self.entries.plain)
+
     def reader(self, file: io.TextIOWrapper):
         return csv.reader(file, delimiter=self.delimiter, quotechar=self.quote, escapechar=self.escape)
 
