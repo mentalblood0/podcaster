@@ -26,9 +26,6 @@ def _upload(
     convert: str,
     order: str,
 ):
-    if order == "new_first":
-        if playlist in cache:
-            return
     for e in playlist if order == "new_first" else playlist[::-1]:
         match e:
             case yoop.Playlist():
@@ -36,6 +33,10 @@ def _upload(
                     continue
                 if not len(e):
                     continue
+                if e in cache:
+                    if order == "old_first":
+                        continue
+                    return
                 logging.info(f"<-- {e.title}")
                 _upload(
                     playlist=e,
