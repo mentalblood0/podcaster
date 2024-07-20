@@ -27,11 +27,7 @@ def cli():
 @click.option("--bitrate", required=False, type=yoop.Audio.Bitrate, default=80, help="Preferable audio bitrate")
 @click.option("--format", required=False, type=yoop.Audio.Format, help="Preferable audio format")
 @click.option(
-    "--samplerate",
-    required=False,
-    type=yoop.Audio.Samplerate,
-    default=yoop.Audio.Samplerate(32000),
-    help="Preferable audio samplerate",
+    "--samplerate", required=False, type=yoop.Audio.Samplerate, default=32000, help="Preferable audio samplerate"
 )
 @click.option(
     "--channels",
