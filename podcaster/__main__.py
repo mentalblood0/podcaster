@@ -78,8 +78,6 @@ class Uploader:
                 case yoop.Playlist():
                     if not e.available:
                         continue
-                    if not len(e):
-                        continue
                     if e in self.loaded_cache:
                         if self.order == "old_first":
                             continue
