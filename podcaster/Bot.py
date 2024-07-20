@@ -12,7 +12,7 @@ from .Repeater import Repeater
 from .Retrier import Retrier
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
+@dataclasses.dataclass(frozen=True)
 class Bot:
     token: str
     chat: str
