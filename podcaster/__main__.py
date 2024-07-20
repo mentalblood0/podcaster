@@ -84,7 +84,7 @@ class Uploader:
                         if self.order == "old_first":
                             continue
                         return
-                    logging.info(f"<-- {e.title}")
+                    logging.info(f"<-- {e.url.value}")
                     self.upload(e)
 
                 case yoop.Media():
