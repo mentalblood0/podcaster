@@ -49,9 +49,9 @@ class Bot:
                 result.append(self.tag(f"part{self.part}"))
             return "\n".join(result)
 
-    def load(self, audio: yoop.Audio, tags: Tags):
+    def load(self, audio: yoop.Audio, tags: Tags, disable_notification: bool):
         if audio.megabytes >= 50:
-            for i, a in enumerate(audio.splitted(math.ceil(len(audio) / 1024 / 1024 / 50))):
+            for i, a in enumerate(audio.splitted(math.ceil(len(audio) / (50 * 1024 * 1024 - len(tags.cover))))):
                 self.load(a, dataclasses.replace(tags, part=i + 1))
         else:
             logging.info(f"--> {tags.title_with_part} {audio.megabytes}MB")
@@ -73,6 +73,7 @@ class Bot:
                                 "performer": tags.artist,
                                 "duration": audio.duration.total_seconds(),
                                 "protect_content": False,
+                                "disable_notification": disable_notification,
                             },
                             files={"audio": audio.verified.data, "thumbnail": tags.cover},
                         ).status_code,

@@ -32,7 +32,7 @@ def cli():
 @click.option(
     "--channels",
     required=False,
-    type=click.Choice([c.value for c in yoop.Audio.Channels]),
+    type=yoop.Audio.Channels,
     default=yoop.Audio.Channels.mono.value,
     help="Resulting audio channels",
 )
@@ -63,6 +63,7 @@ class Uploader:
     channels: yoop.Audio.Channels
     convert: str
     order: str
+    first_uploaded: bool = False
 
     def __post_init__(self):
         self.loaded_cache = Cache(self.cache)
@@ -122,10 +123,13 @@ class Uploader:
                                 date=e.uploaded,
                                 cover=e.thumbnail(150),
                             ),
+                            disable_notification=self.first_uploaded,
                         )
                         self.loaded_cache.add(Entry.from_video(e))
+                        self.first_uploaded = True
                     except Exception as exception:
                         logging.error(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
+                        raise
 
 
 def _cache_all(playlist: yoop.Playlist, cache: Cache):
