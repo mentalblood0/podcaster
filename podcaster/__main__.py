@@ -71,10 +71,10 @@ class Uploader:
         if self.order == "auto":
             self.order = "new_first" if len(self.loaded_cache) else "old_first"
         for u in [self.url / s for s in self.suffixes] + [self.url]:
-            self.upload(yoop.Playlist(u))
+            self.upload(yoop.Playlist(u), self.order)
 
-    def upload(self, playlist: yoop.Playlist):
-        for e in playlist if self.order == "new_first" else playlist[::-1]:
+    def upload(self, playlist: yoop.Playlist, order: str):
+        for e in playlist if order == "new_first" else playlist[::-1]:
             match e:
                 case yoop.Playlist():
                     if not e.available:
@@ -84,7 +84,7 @@ class Uploader:
                             continue
                         return
                     logging.info(f"<-- {e.url.value}")
-                    self.upload(e)
+                    self.upload(e, "new_first")
 
                 case yoop.Media():
                     if not e.available:
