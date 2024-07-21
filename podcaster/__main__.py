@@ -75,14 +75,18 @@ class Uploader:
 
     def upload(self, playlist: yoop.Playlist, order: str, break_on_first_cached: bool):
         for e in playlist if order == "new_first" else playlist[::-1]:
+            logging.info(f"<-- {e.url.value}")
             match e:
                 case yoop.Playlist():
                     if not e.available:
                         continue
-                    if (order != "old_first") and (e in self.loaded_cache):
+                    if e in self.loaded_cache:
+                        if order == "old_first":
+                            continue
                         return
-                    logging.info(f"<-- {e.url.value}")
                     self.upload(e, "new_first", order == "new_first")
+                    if "bandcamp.com" in e.url.value:
+                        self.loaded_cache.add(e)
 
                 case yoop.Media():
                     if not e.available:
@@ -91,8 +95,6 @@ class Uploader:
                         if not break_on_first_cached:
                             continue
                         break
-
-                    logging.info(f"<-- {e.title.simple} {e.uploaded}")
 
                     try:
                         downloaded = e.audio(self.format if self.format is not None else self.bitrate)
@@ -123,7 +125,8 @@ class Uploader:
                             ),
                             disable_notification=self.first_uploaded,
                         )
-                        self.loaded_cache.add(Entry.from_video(e))
+                        if "youtube.com" in e.url.value:
+                            self.loaded_cache.add(e)
                         self.first_uploaded = True
                     except Exception as exception:
                         logging.error(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
@@ -131,16 +134,20 @@ class Uploader:
 
 
 def _cache_all(playlist: yoop.Playlist, cache: Cache):
-    for e in playlist.items:
+    for e in playlist.items[::-1]:
+        if e in cache:
+            continue
         if isinstance(e, yoop.Playlist):
-            _cache_all(e, cache)
+            if "youtube.com" in e.url.value:
+                _cache_all(e, cache)
+            else:
+                entry = Entry.from_playlist(e)
+                cache.add(entry)
+                logging.info(f"{cache.source} <- {entry.row} for {e.url.value}")
         elif isinstance(e, yoop.Media):
-            if e in cache:
-                logging.warning(f"{e.url} already exists")
-                continue
-            entry = Entry.from_video(e)
+            entry = Entry.from_media(e)
             cache.add(entry)
-            logging.info(entry.row)
+            logging.info(f"{cache.source} <- {entry.row} for {e.url.value}")
 
 
 @cli.command(name="cache_all")
@@ -150,6 +157,7 @@ def _cache_all(playlist: yoop.Playlist, cache: Cache):
 )
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
 def cache_all(url: yoop.Url, suffixes: list[str], cache: pathlib.Path):
+    cache.unlink(missing_ok=True)
     _cache = Cache(cache)
     for u in [url] + [url / s for s in suffixes]:
         _cache_all(yoop.Playlist(u), _cache)

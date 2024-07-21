@@ -2,12 +2,12 @@ import base64
 import csv
 import dataclasses
 import datetime
+import hashlib
 import io
 import logging
 import pathlib
 import time
 import typing
-import zlib
 
 import yoop
 
@@ -15,8 +15,8 @@ import yoop
 @dataclasses.dataclass(frozen=False, kw_only=False, unsafe_hash=True)
 class Entry:
     id: "Id" = dataclasses.field(hash=False)
-    uploaded: datetime.datetime = dataclasses.field(hash=True)
-    duration: datetime.timedelta = dataclasses.field(hash=True)
+    uploaded: datetime.datetime | None = dataclasses.field(hash=True)
+    duration: datetime.timedelta | None = dataclasses.field(hash=True)
 
     @dataclasses.dataclass(frozen=True, kw_only=False)
     class Id:
@@ -28,9 +28,7 @@ class Entry:
                 if "watch?v=" in url.value:
                     return cls(url.value.split("watch?v=")[-1])
                 return cls(url.value.split("/")[-1])
-            return cls(
-                base64.b64encode(zlib.adler32(url.value.encode()).to_bytes(length=4, byteorder="big"))[:-2].decode()
-            )
+            return cls(base64.b64encode(hashlib.sha512(url.value.encode()).digest())[:-2].decode())
 
     def __eq__(self, another: object):
         if not isinstance(another, Entry):
@@ -41,21 +39,38 @@ class Entry:
     def row(self):
         return (
             self.id.value,
-            base64.b64encode(int(self.uploaded.timestamp()).to_bytes(length=6, byteorder="big")).decode("ascii"),
-            base64.b64encode(int(self.duration.total_seconds()).to_bytes(length=3, byteorder="big")).decode("ascii"),
+            (
+                base64.b64encode(int(self.uploaded.timestamp()).to_bytes(length=6, byteorder="big")).decode("ascii")
+                if self.uploaded is not None
+                else ""
+            ),
+            (
+                base64.b64encode(int(self.duration.total_seconds()).to_bytes(length=3, byteorder="big")).decode("ascii")
+                if self.duration is not None
+                else ""
+            ),
         )
 
     @classmethod
-    def from_video(cls, v: yoop.Media):
-        return cls(Entry.Id.from_url(v.url), v.uploaded, v.duration)
+    def from_media(cls, v: yoop.Media):
+        v_id = Entry.Id.from_url(v.url)
+        if "youtube.com" in v.url.value:
+            return cls(v_id, v.uploaded, v.duration)
+        return cls(v_id, None, None)
+
+    @classmethod
+    def from_playlist(cls, v: yoop.Playlist):
+        if "youtube.com" in v.url.value:
+            raise ValueError
+        return cls(Entry.Id.from_url(v.url), None, None)
 
     @classmethod
     def from_row(cls, r: tuple[str, str, str] | list[str]):
         if isinstance(r, tuple):
             return cls(
                 id=Entry.Id(r[0]),
-                uploaded=datetime.datetime.fromtimestamp(int.from_bytes(base64.b64decode(r[1]))),
-                duration=datetime.timedelta(seconds=int.from_bytes(base64.b64decode(r[2]))),
+                uploaded=datetime.datetime.fromtimestamp(int.from_bytes(base64.b64decode(r[1]))) if len(r[1]) else None,
+                duration=datetime.timedelta(seconds=int.from_bytes(base64.b64decode(r[2]))) if len(r[2]) else None,
             )
         elif isinstance(r, list):
             if len(r) != 3:
@@ -69,6 +84,11 @@ class Entries:
     plain: set[Entry] = dataclasses.field(default_factory=set)
 
     def add(self, e: Entry):
+        if e.uploaded is None:
+            self.by_id[e.id] = e
+            self.plain.add(e)
+            return
+
         if (e in self.plain) and (old := ({e} & self.plain).pop().id) != e.id:
             del self.by_id[old]
             self.plain.remove(e)
@@ -81,10 +101,10 @@ class Entries:
         if e in self.plain:
             self.plain.remove(e)
 
-    def url(self, e: typing.Union[Entry, yoop.Media]):
+    def url(self, e: Entry | yoop.Media | yoop.Playlist):
         if isinstance(e, Entry):
             return e.id in self.by_id
-        elif isinstance(e, yoop.Media):
+        elif isinstance(e, yoop.Media) or isinstance(e, yoop.Playlist):
             return Entry.Id.from_url(e.url) in self.by_id
 
     def clear(self):
@@ -137,13 +157,15 @@ class Cache:
                 writer.writerow(e.row)
         temp.rename(self.source)
 
-    def add(self, o: Entry):
+    def add(self, o: yoop.Media | yoop.Playlist):
+        entry = Entry.from_media(o) if isinstance(o, yoop.Media) else Entry.from_playlist(o)
+
         with self.source.open(mode="a", newline="", encoding="utf8") as f:
-            self.writer(f).writerow(o.row)
+            self.writer(f).writerow(entry.row)
 
         if self.entries.url(o):
-            self.entries.remove(o)
-        self.entries.add(o)
+            self.entries.remove(entry)
+        self.entries.add(entry)
 
     def __contains__(self, o: yoop.Media | yoop.Playlist):
         if isinstance(o, yoop.Media):
@@ -152,7 +174,7 @@ class Cache:
 
             if "youtube.com" in o.url.value:
                 try:
-                    e = Entry.from_video(o)
+                    e = Entry.from_media(o)
                     if e in self.entries:
                         self.add(e)
                         return True
@@ -163,6 +185,8 @@ class Cache:
 
         elif isinstance(o, yoop.Playlist):
             try:
-                return o[0] in self
+                if "youtube.com" in o.url.value:
+                    return o[0] in self
+                return self.entries.url(o)
             except IndexError:
                 return False
