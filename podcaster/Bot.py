@@ -71,7 +71,7 @@ class Bot:
                                 "caption": str(tags),
                                 "title": tags.title_with_part,
                                 "performer": tags.artist,
-                                "duration": audio.duration.total_seconds(),
+                                "duration": audio.duration.total_seconds() if audio.duration is not None else None,
                                 "protect_content": False,
                                 "disable_notification": disable_notification,
                             },

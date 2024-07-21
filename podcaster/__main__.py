@@ -6,9 +6,7 @@ import click
 import yoop
 
 from .Bot import Bot
-from .Cache import Cache, Entry
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s  %(message)s")
+from .Cache import Cache
 
 
 @click.group
@@ -133,40 +131,42 @@ class Uploader:
                         raise
 
 
-def _cache_all(playlist: yoop.Playlist, cache: Cache):
-    for e in playlist.items[::-1]:
-        if e in cache:
-            continue
-        if isinstance(e, yoop.Playlist):
-            if "youtube.com" in e.url.value:
-                _cache_all(e, cache)
-            else:
-                entry = Entry.from_playlist(e)
-                cache.add(entry)
-                logging.info(f"{cache.source} <- {entry.row} for {e.url.value}")
-        elif isinstance(e, yoop.Media):
-            entry = Entry.from_media(e)
-            cache.add(entry)
-            logging.info(f"{cache.source} <- {entry.row} for {e.url.value}")
-
-
 @cli.command(name="cache_all")
 @click.option("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
 @click.option(
     "-s", "--suffixes", required=False, type=str, help="Suffixes to generate additional urls", multiple=True, default=[]
 )
 @click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
-def cache_all(url: yoop.Url, suffixes: list[str], cache: pathlib.Path):
-    cache.unlink(missing_ok=True)
-    _cache = Cache(cache)
-    for u in [url] + [url / s for s in suffixes]:
-        _cache_all(yoop.Playlist(u), _cache)
+@click.option("--log", required=True, type=pathlib.Path, help="Path to log file")
+@dataclass
+class Cacher:
+    url: yoop.Url
+    suffixes: list[str]
+    cache: pathlib.Path
+    log: pathlib.Path
 
+    def __post_init__(self):
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s  %(message)s", filename=self.log)
 
-@cli.command(name="clean")
-@click.option("--cache", required=True, type=pathlib.Path, help="Path to cache file")
-def clean(cache: pathlib.Path):
-    Cache(cache).dump()
+        self.cache.unlink(missing_ok=True)
+        self.loaded_cache = Cache(self.cache)
+
+        for u in [self.url] + [self.url / s for s in self.suffixes]:
+            self.cache_all(yoop.Playlist(u))
+        logging.info(f"finished caching {self.url}")
+
+    def cache_all(self, playlist: yoop.Playlist):
+        for e in playlist.items[::-1]:
+            if isinstance(e, yoop.Playlist) and ("youtube.com" in e.url.value):
+                self.cache_all(e)
+            else:
+                try:
+                    if not e.available:
+                        continue
+                    self.loaded_cache.add(e)
+                    logging.info(f"{self.loaded_cache.source} <- {Cache.hash(e).hex()} for {e.url.value}")
+                except Exception as ex:
+                    logging.warning(f"exception while caching {e} from {playlist} from {self.url}: {ex}")
 
 
 cli()
