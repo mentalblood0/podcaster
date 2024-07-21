@@ -150,14 +150,14 @@ class Cache:
             if self.entries.url(o):
                 return True
 
-            try:
-                e = Entry.from_video(o)
-                if e in self.entries:
-                    if not self.entries.url(o):
+            if "youtube.com" in o.url.value:
+                try:
+                    e = Entry.from_video(o)
+                    if e in self.entries:
                         self.add(e)
+                        return True
+                except:
                     return True
-            except:
-                return True
 
             return False
 
