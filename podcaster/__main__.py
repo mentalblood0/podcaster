@@ -64,6 +64,8 @@ class Uploader:
     first_uploaded: bool = False
 
     def __post_init__(self):
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s  %(message)s")
+
         self.loaded_cache = Cache(self.cache)
         self.bot = Bot(self.token, self.telegram)
         if self.order == "auto":
@@ -73,7 +75,6 @@ class Uploader:
 
     def upload(self, playlist: yoop.Playlist, order: str, break_on_first_cached: bool):
         for e in playlist if order == "new_first" else playlist[::-1]:
-            logging.info(f"<-- {e.url.value}")
             match e:
                 case yoop.Playlist():
                     if not e.available:
@@ -82,6 +83,7 @@ class Uploader:
                         if order == "old_first":
                             continue
                         return
+                    logging.info(f"<-- {e.url.value}")
                     self.upload(e, "new_first", order == "new_first")
                     if "bandcamp.com" in e.url.value:
                         self.loaded_cache.add(e)
@@ -95,6 +97,7 @@ class Uploader:
                         break
 
                     try:
+                        logging.info(f"<-- {e.url.value}")
                         downloaded = e.audio(self.format if self.format is not None else self.bitrate)
 
                         converted = downloaded
@@ -127,8 +130,7 @@ class Uploader:
                             self.loaded_cache.add(e)
                         self.first_uploaded = True
                     except Exception as exception:
-                        logging.error(f"exception during processing {e}: {exception.__class__.__name__}: {exception}")
-                        raise
+                        logging.warning(f"exception while uploading {e} from {playlist} from {self.url}: {exception}")
 
 
 @cli.command(name="cache_all")

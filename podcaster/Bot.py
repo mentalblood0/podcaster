@@ -2,7 +2,6 @@ import dataclasses
 import datetime
 import logging
 import math
-import re
 
 import requests
 import urllib3.exceptions
@@ -35,7 +34,7 @@ class Bot:
 
         @classmethod
         def tag(cls, s: str):
-            return "#" + "".join(word.title() for word in re.sub(r"[^\w\s]", "", s).split(" "))
+            return "#" + "".join(word.title() for word in s.lstrip("1234567890").split(" "))
 
         def __str__(self):
             result = [
