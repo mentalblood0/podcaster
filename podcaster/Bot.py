@@ -51,10 +51,10 @@ class Bot:
 
     def load(self, audio: yoop.Audio, tags: Tags, disable_notification: bool):
         if audio.megabytes >= 50:
-            for i, a in enumerate(audio.splitted(math.ceil(len(audio) / (50 * 1024 * 1024 - len(tags.cover))))):
+            for i, a in enumerate(audio.splitted(math.ceil(len(audio) / (49 * 1024 * 1024)))):
                 self.load(a, dataclasses.replace(tags, part=i + 1))
         else:
-            logging.info(f"--> {tags.title_with_part} {audio.megabytes}MB")
+            logging.info(f"--> {tags.title_with_part} {audio.megabytes}MB {len(audio) / 1024 / 1024}MB")
             while (
                 status_code := Retrier(
                     exceptions={

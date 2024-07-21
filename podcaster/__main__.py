@@ -106,7 +106,7 @@ class Uploader:
                                 (self.convert == "reduce_size")
                                 and downloaded.estimated_converted_size(self.bitrate) < 0.9 * len(downloaded)
                             )
-                            or (downloaded.megabytes >= 50)
+                            or (downloaded.megabytes >= 49)
                         ):
                             converted = downloaded.converted(
                                 bitrate=self.bitrate,
