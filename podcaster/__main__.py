@@ -71,9 +71,9 @@ class Uploader:
         if self.order == "auto":
             self.order = "new_first" if len(self.loaded_cache) else "old_first"
         for u in [self.url / s for s in self.suffixes] + [self.url]:
-            self.upload(yoop.Playlist(u), self.order, self.order == "new_first")
+            self.upload(yoop.Playlist(u), self.order, self.order == "new_first", True)
 
-    def upload(self, playlist: yoop.Playlist, order: str, break_on_first_cached: bool):
+    def upload(self, playlist: yoop.Playlist, order: str, break_on_first_cached: bool, root=False):
         for e in playlist if order == "new_first" else playlist[::-1]:
             match e:
                 case yoop.Playlist():
@@ -126,7 +126,7 @@ class Uploader:
                             ),
                             disable_notification=self.first_uploaded,
                         )
-                        if "youtube.com" in e.url.value:
+                        if root or ("youtube.com" in e.url.value):
                             self.loaded_cache.add(e)
                         self.first_uploaded = True
                     except Exception as exception:
