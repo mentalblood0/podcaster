@@ -75,7 +75,6 @@ class Uploader:
 
     def upload(self, playlist: yoop.Playlist, order: str, break_on_first_cached: bool):
         for e in playlist if order == "new_first" else playlist[::-1]:
-            print(e)
             match e:
                 case yoop.Playlist():
                     if not e.available:
@@ -87,10 +86,8 @@ class Uploader:
 
                 case yoop.Media():
                     if not e.available:
-                        print(f"{e} not available")
                         continue
                     if e in self.loaded_cache:
-                        print(f"{e} in cache")
                         if not break_on_first_cached:
                             continue
                         break
