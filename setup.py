@@ -11,5 +11,5 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         author="mentalblood",
         packages=setuptools.find_packages(exclude=["tests*"]),
-        install_requires=["click", "yoop"],
+        install_requires=["yoop"],
     )
