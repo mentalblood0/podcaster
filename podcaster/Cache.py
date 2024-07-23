@@ -15,12 +15,11 @@ class Cache:
         self.load()
 
     def load(self):
-        if not self.source.exists():
-            self.hashes.clear()
-            return
-        with self.source.open(mode="rb") as f:
-            while buffer := f.read(64):
-                self.hashes.add(buffer)
+        self.hashes.clear()
+        if self.source.exists():
+            with self.source.open(mode="rb") as f:
+                while buffer := f.read(64):
+                    self.hashes.add(buffer)
 
     @staticmethod
     def hash(o: yoop.Media | yoop.Playlist):
