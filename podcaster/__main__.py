@@ -4,11 +4,7 @@ import pathlib
 
 import yoop
 
-from .Bot import Bot
-from .Cache import Cache
-from .Cacher import Cacher
 from .enums import ConvertMode, OrderMode
-from .Uploader import Uploader
 
 parser = argparse.ArgumentParser(
     prog="podcaster", description="Upload audio from youtube/bandcamp to telegram channels"
@@ -82,12 +78,21 @@ cache_subparser.add_argument("--telegram", required=True, type=str, help="Telegr
 cache_subparser.add_argument("--cache", required=True, type=pathlib.Path, help="Path to cache file")
 
 args = parser.parse_args()
+if not args.command:
+    parser.print_help()
+    exit()
+
 if args.log is None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s  %(message)s")
 else:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s  %(message)s", filename=args.log)
 
+from .Cache import Cache
+
 if args.command == "upload":
+    from .Bot import Bot
+    from .Uploader import Uploader
+
     Uploader(
         url=args.url,
         suffixes=args.suffixes,
@@ -101,4 +106,6 @@ if args.command == "upload":
         order=args.order,
     ).upload()
 if args.command == "cache":
+    from .Cacher import Cacher
+
     Cacher(url=args.url, suffixes=args.suffixes, cache=Cache(args.cache)).cache_all()
