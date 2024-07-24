@@ -86,7 +86,6 @@ class Uploader:
                                 date=e.uploaded,
                                 cover=e.thumbnail(150),
                             ),
-                            disable_notification=self.first_uploaded,
                         )
                         if root or ("youtube.com" in e.url.value):
                             self.cache.add(e)

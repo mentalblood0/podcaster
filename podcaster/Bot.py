@@ -3,6 +3,7 @@ import datetime
 import logging
 import math
 import re
+import typing
 
 import requests
 import urllib3.exceptions
@@ -12,10 +13,11 @@ from .Repeater import Repeater
 from .Retrier import Retrier
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=False)
 class Bot:
-    token: str
-    chat: str
+    token: typing.Final[str]
+    chat: typing.Final[str]
+    first: bool = True
 
     @dataclasses.dataclass(frozen=True, kw_only=True)
     class Tags:
@@ -49,10 +51,10 @@ class Bot:
                 result.append(self.tag(f"part{self.part}"))
             return "\n".join(result)
 
-    def load(self, audio: yoop.Audio, tags: Tags, disable_notification: bool):
+    def load(self, audio: yoop.Audio, tags: Tags):
         if audio.megabytes >= 49:
             for i, a in enumerate(audio.splitted(math.ceil(len(audio) / (49 * 1024 * 1024)))):
-                self.load(a, dataclasses.replace(tags, part=i + 1), disable_notification=disable_notification)
+                self.load(a, dataclasses.replace(tags, part=i + 1))
         else:
             logging.info(f"--> {tags.title_with_part} {audio.megabytes}MB")
             while (
@@ -73,7 +75,7 @@ class Bot:
                                 "performer": tags.artist,
                                 "duration": audio.duration.total_seconds() if audio.duration is not None else None,
                                 "protect_content": False,
-                                "disable_notification": disable_notification,
+                                "disable_notification": not self.first,
                             },
                             files={"audio": audio.verified.data, "thumbnail": tags.cover},
                         ).status_code,
@@ -84,3 +86,4 @@ class Bot:
                 logging.info(
                     f"Non-200 status code when uploading to telegram audio {tags.artist} - {tags.title}: {status_code}"
                 )
+        self.first = False
