@@ -1,8 +1,7 @@
+import dataclasses
+import datetime
 import time
 import typing
-import datetime
-import dataclasses
-
 
 T = typing.TypeVar("T")
 

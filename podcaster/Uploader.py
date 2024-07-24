@@ -35,7 +35,7 @@ class Uploader:
                 root=True,
             )
 
-    def _upload(self, playlist: yoop.Playlist, order: str, break_on_first_cached: bool, root=False):
+    def _upload(self, playlist: yoop.Playlist, order: OrderMode, break_on_first_cached: bool, root=False):
         for e in playlist if order == OrderMode.NEW_FIRST else playlist[::-1]:
             match e:
                 case yoop.Playlist():

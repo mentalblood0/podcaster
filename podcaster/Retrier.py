@@ -1,8 +1,7 @@
-import typing
 import dataclasses
+import typing
 
 from .Repeater import Repeater
-
 
 T = typing.TypeVar("T")
 
