@@ -14,7 +14,7 @@ parser.add_argument("-l", "--log", type=pathlib.Path, required=False, default=No
 subparsers = parser.add_subparsers(dest="command")
 
 upload_subparser = subparsers.add_parser("upload", help="Upload from youtube/bandcamp to telegram channel")
-upload_subparser.add_argument("--url", required=True, type=yoop.Url, help="Youtube channel or playlist URL")
+upload_subparser.add_argument("--url", required=True, type=yoop.Url, help="Channel or playlist URL")
 upload_subparser.add_argument(
     "-s", "--suffixes", required=False, type=str, nargs="+", help="Suffixes to generate additional urls", default=[]
 )
