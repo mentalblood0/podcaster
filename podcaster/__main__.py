@@ -74,7 +74,6 @@ cache_subparser.add_argument("--url", required=True, type=yoop.Url, help="Youtub
 cache_subparser.add_argument(
     "-s", "--suffixes", required=False, type=str, nargs="+", help="Suffixes to generate additional urls", default=[]
 )
-cache_subparser.add_argument("--telegram", required=True, type=str, help="Telegram chat id")
 cache_subparser.add_argument("--cache", required=True, type=pathlib.Path, help="Path to cache file")
 
 args = parser.parse_args()
