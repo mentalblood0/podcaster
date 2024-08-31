@@ -4,7 +4,7 @@ import pathlib
 
 import yoop
 
-from .enums import ConvertMode, OrderMode
+from .enums import ConvertMode, LinkType, OrderMode
 
 parser = argparse.ArgumentParser(
     prog="podcaster", description="Upload audio from youtube/bandcamp to telegram channels"
@@ -67,6 +67,14 @@ upload_subparser.add_argument(
     default=OrderMode.AUTO.value,
     help="Which items process first",
 )
+upload_subparser.add_argument(
+    "--link_type",
+    required=False,
+    type=LinkType,
+    choices=[c for c in LinkType],
+    default=LinkType.PLAYLIST,
+    help="Link content type",
+)
 cache_subparser = subparsers.add_parser(
     "cache", help="Cache all youtube/bandcamp items as if they were already uploaded"
 )
@@ -103,6 +111,7 @@ if args.command == "upload":
         channels=args.channels,
         convert=args.convert,
         order=args.order,
+        link_type=args.link_type,
     ).upload()
 if args.command == "cache":
     from .Cacher import Cacher

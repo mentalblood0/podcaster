@@ -17,3 +17,11 @@ class OrderMode(Enum):
 
     def __str__(self):
         return self.value
+
+
+class LinkType(Enum):
+    PLAYLIST = "playlist"
+    TRACK = "track"
+
+    def __str__(self):
+        return self.value
