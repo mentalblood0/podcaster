@@ -27,7 +27,7 @@ class Uploader:
             self.order = OrderMode.NEW_FIRST if len(self.cache) else OrderMode.OLD_FIRST
 
     def upload(self):
-        for u in [self.url / s for s in self.suffixes] + [self.url]:
+        for u in [self.url / s for s in self.suffixes] or [self.url]:
             self._upload(
                 playlist=yoop.Playlist(u),
                 order=self.order,
