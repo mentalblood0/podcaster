@@ -91,3 +91,5 @@ class Uploader:
                         self.first_uploaded = True
                     except Exception as exception:
                         logging.warning(f"exception while uploading {e} from {playlist} from {self.url}: {exception}")
+                        if "bandcamp.com" in e.url.value:
+                            exit()
