@@ -29,7 +29,7 @@ class Uploader:
 
     def upload(self):
         if self.link_type == LinkType.PLAYLIST:
-            for u in [self.url / s for s in self.suffixes] or [self.url]:
+            for u in [self.url] + [self.url / s for s in self.suffixes]:
                 self._upload(
                     something=yoop.Playlist(u),
                     order=self.order,
